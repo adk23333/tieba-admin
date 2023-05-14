@@ -1,2 +1,4 @@
 ./venv/
-./*.toml
+/aiotieba.toml
+/cmd_handler.toml
+/setting.toml
