@@ -125,6 +125,7 @@ async def check_text(obj: TypeObj) -> Optional[Punish]:
 class ReviewerThread(Thread):
     TimeInterval = 0.0
     Order = 0
+    Task = None
 
     def __init__(self, is_test: bool, keyword):
         super(ReviewerThread, self).__init__()
@@ -134,19 +135,24 @@ class ReviewerThread(Thread):
         KEY_WORD = keyword
 
     def run(self):
-        asyncio.run(self.reviewer())
+        self.Task = asyncio.create_task(self.reviewer())
+        await self.Task
 
     async def reviewer(self):
         tbr.set_BDUSS_key('admin')
         tbr.set_fname('变身嫁人小说')
 
-        if not self.isTest:
-            with tbr.no_test():
+        try:
+            if not self.isTest:
+                with tbr.no_test():
+                    await tbr.run()
+            else:
                 await tbr.run()
-        else:
-            await tbr.run()
+        except asyncio.CancelledError:
+            pass
 
     def stop(self):
+        self.Task.cancel()
         self._stop_event.set()
 
     def stopped(self):
