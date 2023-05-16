@@ -43,7 +43,7 @@ def init_config():
 
 
 async def get_keyword():
-    with open("./reviewer/keyword.json", "r", encoding='utf-8') as _f:
+    with open("keyword.json", "r", encoding='utf-8') as _f:
         return json.load(_f)
 
 
@@ -74,7 +74,7 @@ async def reviewer_query(request):
 
 @app.get('/api/v1/reviewer/keyword/query')
 async def keyword_query(request):
-    with open('./reviewer/keyword.json', 'r', encoding='utf-8') as _f:
+    with open('keyword.json', 'r', encoding='utf-8') as _f:
         keywords = json.load(_f)
     return se_json("成功", {'keywords': keywords})
 
