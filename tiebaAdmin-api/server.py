@@ -7,6 +7,9 @@ from sanic.log import logger
 from sanic_ext import Extend
 from reviewer import ReviewerThread, HandleThread
 
+
+KEYWORD_PATH = "./keyword.json"
+
 """
 获取启动参数，默认为开发模式，生产模式须加上--prd
 """
@@ -43,7 +46,7 @@ def init_config():
 
 
 async def get_keyword():
-    with open("keyword.json", "r", encoding='utf-8') as _f:
+    with open(KEYWORD_PATH, "r", encoding='utf-8') as _f:
         return json.load(_f)
 
 
@@ -74,16 +77,16 @@ async def reviewer_query(request):
 
 @app.get('/api/v1/reviewer/keyword/query')
 async def keyword_query(request):
-    with open('keyword.json', 'r', encoding='utf-8') as _f:
+    with open(KEYWORD_PATH, 'r', encoding='utf-8') as _f:
         keywords = json.load(_f)
     return se_json("成功", {'keywords': keywords})
 
 
 @app.get('/api/v1/reviewer/keyword/update')
 async def keyword_update(request):
-    with open('./tieba/keyword.json', 'a+', encoding='utf-8') as _f:
+    with open(KEYWORD_PATH, 'a+', encoding='utf-8') as _f:
         _f.truncate(0)
-    with open('./tieba/keyword.json', 'w', encoding='utf-8') as _f:
+    with open(KEYWORD_PATH, 'w', encoding='utf-8') as _f:
         json.dump(request.args.getlist('keywords'), _f, indent=4)
     return se_json("成功", {'keywords': request.args.getlist('value')})
 
