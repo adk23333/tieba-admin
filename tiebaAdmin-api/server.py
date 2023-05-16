@@ -8,7 +8,7 @@ from sanic_ext import Extend
 from reviewer import ReviewerThread, HandleThread
 
 """
-获取启动参数，默认为开发模式，生产模式须加上--production
+获取启动参数，默认为开发模式，生产模式须加上--prd
 """
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -18,7 +18,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 with open('./setting.toml', 'rb') as f:
-    if args.production:
+    if args.prd:
         SETTING_CONFIG = tomli.load(f).get('Prd')
     else:
         SETTING_CONFIG = tomli.load(f).get('Dev')
@@ -43,7 +43,7 @@ def init_config():
 
 
 async def get_keyword():
-    with open("./tieba/keyword.json", "r", encoding='utf-8') as _f:
+    with open("./reviewer/keyword.json", "r", encoding='utf-8') as _f:
         return json.load(_f)
 
 
@@ -74,7 +74,7 @@ async def reviewer_query(request):
 
 @app.get('/api/v1/reviewer/keyword/query')
 async def keyword_query(request):
-    with open('./tieba/keyword.json', 'r', encoding='utf-8') as _f:
+    with open('./reviewer/keyword.json', 'r', encoding='utf-8') as _f:
         keywords = json.load(_f)
     return se_json("成功", {'keywords': keywords})
 
@@ -112,9 +112,9 @@ async def handle_query(request):
     else:
         return se_json("审查工具已关闭", {'status': status})
 
-
+init_config()
 if __name__ == '__main__':
-    init_config()
+
     app.run(host=SETTING_CONFIG['Run']['host'],
             port=SETTING_CONFIG['Run']['port'],
             dev=SETTING_CONFIG['Run']['debug'],

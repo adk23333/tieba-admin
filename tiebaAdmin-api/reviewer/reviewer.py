@@ -12,7 +12,7 @@ from aiotieba_reviewer import Ops, Punish, TypeObj, imgproc
 from cacheout import Cache
 
 sign_check_exp = re.compile(r'企鹅|扣扣', re.I)
-
+KEY_WORD = ""
 
 # pip install cacheout
 # 为高开销函数创建缓存

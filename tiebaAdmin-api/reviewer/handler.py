@@ -1,20 +1,18 @@
-from threading import Thread, Event
-
 import asyncio
 import functools
 import itertools
 import re
 import time
+from threading import Thread, Event
 from typing import Protocol, Tuple, Union
 
 import aiotieba as tb
+import aiotieba_reviewer as tbr
 import async_timeout
 from aiotieba.api.get_ats import At
 from aiotieba.api.get_comments._classdef import Contents_cp
 from aiotieba.api.get_posts._classdef import Contents_p, Contents_pt
 from aiotieba.config import tomllib
-
-import aiotieba_reviewer as tbr
 
 with open("cmd_handler.toml", 'rb') as file:
     LISTEN_CONFIG = tomllib.load(file)
@@ -252,13 +250,13 @@ class Listener(object):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await asyncio.gather(
-            *[c.__aexit__() for c in itertools.chain.from_iterable(self.admins.values())], self.listener.__aexit__()
+            *[c.__aexit__() for c in itertools.chain.from_iterable(self.admins.values())], self.listener.__aexit__(exc_type, exc_val, exc_tb)
         )
 
     async def run(self) -> None:
         while 1:
             try:
-                asyncio.create_task(self.__fetch_and_execute_cmds())
+                asyncio.create_task(self.fetch_and_execute_cmds())
                 tb.LOG().debug('heartbeat')
                 await asyncio.sleep(4.0)
 
@@ -288,7 +286,7 @@ class Listener(object):
 
         return tup
 
-    async def __fetch_and_execute_cmds(self) -> None:
+    async def fetch_and_execute_cmds(self) -> None:
         ats = await self.listener.get_ats()
 
         ats = list(itertools.takewhile(lambda at: self.time_recorder.is_inrange(at.create_time), ats))
@@ -830,6 +828,8 @@ class Listener(object):
 
 
 class HandleThread(Thread):
+    Task: asyncio.Task = None
+
     def __init__(self):
         super(HandleThread, self).__init__()
         self._stop_event = Event()
@@ -840,11 +840,13 @@ class HandleThread(Thread):
     async def handler(self):
         try:
             async with MyListener(self) as listener:
-                await listener.run()
+                self.Task = asyncio.create_task(listener.run())
+                await self.Task
         except AttributeError:
             pass
 
     def stop(self):
+        self.Task.cancel()
         self._stop_event.set()
 
     def stopped(self):
@@ -863,7 +865,7 @@ class MyListener(Listener):
             try:
                 if self.Order % 100 == 0:
                     tb.LOG().debug('heartbeat')
-                asyncio.create_task(self._fetch_and_execute_cmds())
+                await self.fetch_and_execute_cmds()
                 self.Order += 1
                 await asyncio.sleep(5)
 
