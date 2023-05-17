@@ -1,0 +1,68 @@
+@import './base.css';
+
+#app {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem;
+
+    font-weight: normal;
+}
+
+a,
+.green {
+    text-decoration: none;
+    color: hsla(160, 100%, 37%, 1);
+    transition: 0.4s;
+}
+
+@media (min-width: 1024px) {
+    body::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(#2196f3, #e91e63);
+        clip-path: circle(20% at 10% 10%);
+        /* circle()可以传人2个可选参数；
+            1. 圆的半径，默认元素宽高中短的那个为直径，支持百分比
+            2. 圆心位置，默认为元素中心点 */
+    }
+
+    body {
+        display: flex;
+        place-items: center;
+    }
+
+    #app {
+        display: flex;
+        place-items: center;
+
+    }
+
+    .entry-cards {
+        position: relative;
+        display: flex; /* flex容器（flex container） */
+        justify-content: center; /* 定义项目在主轴上的对齐方式 */
+        align-items: center; /* 定义项目在竖直方向上对齐方式 */
+        max-width: 1200px;
+        flex-wrap: wrap; /* 定义项目是否换行以及如何换行  */
+        z-index: 1;
+    }
+
+    .entry-cards h2 {
+        color: #ffffff;
+    }
+
+    .entry-cards p {
+        padding-top: 0.15rem;
+        color: #ffffff;
+    }
+
+    .van-cell.van-cell--center {
+        background: rgba(255, 255, 255, 0);
+        --van-cell-text-color: #ffffff;
+    }
+
+}
