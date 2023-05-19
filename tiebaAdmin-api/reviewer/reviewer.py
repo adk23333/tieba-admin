@@ -135,6 +135,9 @@ class ReviewerThread(Thread):
         KEY_WORD = keyword
 
     def run(self):
+        asyncio.run(self.__run())
+
+    async def __run(self):
         self.Task = asyncio.create_task(self.reviewer())
         await self.Task
 
