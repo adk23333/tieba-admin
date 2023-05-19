@@ -41,7 +41,7 @@ Extend(app)
 
 @app.listener("before_server_start")
 async def init_self_plugin(mapp):
-    mapp.ctx.reviewer = ReviewerThread(False, await get_keyword())
+    mapp.ctx.reviewer = ReviewerThread(SETTING_CONFIG['Run']['debug'], await get_keyword())
     mapp.ctx.handler = HandleThread()
     app.ctx.assets = listdir("./page/assets")
 
@@ -62,13 +62,13 @@ async def reviewer_switch(request):
     try:
         if app.ctx.reviewer.is_alive():
             app.ctx.reviewer.stop()
-            app.ctx.reviewer = ReviewerThread(False, await get_keyword())
+            app.ctx.reviewer = ReviewerThread(SETTING_CONFIG['Run']['debug'], await get_keyword())
             return se_json("切换成功", {"status": not app.ctx.reviewer.stopped()})
         else:
             if not app.ctx.reviewer.stopped():
                 app.ctx.reviewer.start()
             else:
-                app.ctx.reviewer = ReviewerThread(False, await get_keyword())
+                app.ctx.reviewer = ReviewerThread(SETTING_CONFIG['Run']['debug'], await get_keyword())
             return se_json("切换成功", {"status": app.ctx.reviewer.is_alive()})
     except Exception:
         return se_json("切换失败", {}, 500)
