@@ -24,13 +24,13 @@ KEEP_ALIVE = true
 KEEP_ALIVE_TIMEOUT = 15000
 FALLBACK_ERROR_FORMAT = "json"
 
-[Pro]
-[Pro.Run]
+[Prd]
+[Prd.Run]
 host = '0.0.0.0'
 port = 3000
 debug = false
 
-[Pro.App]
+[Prd.App]
 KEEP_ALIVE = true
 KEEP_ALIVE_TIMEOUT = 15000
 FALLBACK_ERROR_FORMAT = "json"
