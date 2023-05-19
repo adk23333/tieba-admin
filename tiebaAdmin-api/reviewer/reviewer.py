@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import re
 from threading import Thread, Event
@@ -5,6 +6,7 @@ from typing import List, Optional, Tuple
 
 import aiotieba as tb
 import aiotieba_reviewer as tbr
+import tomli
 from aiotieba.api.get_homepage import Thread_home, UserInfo_home
 from aiotieba.api.get_posts import UserInfo_pt
 from aiotieba.typing import Comment, Post
@@ -126,6 +128,7 @@ class ReviewerThread(Thread):
     TimeInterval = 0.0
     Order = 0
     Task = None
+    REVIEWER_CONFIG = []
 
     def __init__(self, is_test: bool, keyword):
         super(ReviewerThread, self).__init__()
@@ -133,6 +136,12 @@ class ReviewerThread(Thread):
         self.isTest = is_test
         global KEY_WORD
         KEY_WORD = keyword
+        self.REVIEWER_CONFIG = self.get_config()
+
+    @staticmethod
+    def get_config():
+        with open('setting.toml', 'rb') as file:
+            return tomli.load(file)
 
     def run(self):
         asyncio.run(self.__run())
@@ -142,8 +151,8 @@ class ReviewerThread(Thread):
         await self.Task
 
     async def reviewer(self):
-        tbr.set_BDUSS_key('admin')
-        tbr.set_fname('变身嫁人小说')
+        tbr.set_BDUSS_key(self.REVIEWER_CONFIG['Reviewer']['BDUSS_key'])
+        tbr.set_fname(self.REVIEWER_CONFIG['Reviewer']['fname'])
 
         try:
             if not self.isTest:
@@ -163,25 +172,25 @@ class ReviewerThread(Thread):
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument(
-    #     "--no_test",
-    #     help="测试模式默认开启以避免误操作 生产环境下使用该选项将其关闭",
-    #     action="store_true",
-    # )
-    # args = parser.parse_args()
-    #
-    #
-    # async def main():
-    #     tbr.set_BDUSS_key('admin')
-    #     tbr.set_fname('变身嫁人小说')
-    #
-    #     if args.no_test:
-    #         with tbr.no_test():
-    #             await tbr.run()
-    #     else:
-    #         await tbr.run(20.0)
-    # asyncio.run(main())
-    rt = ReviewerThread(False)
-    rt.start()
-    rt.join()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--no_test",
+        help="测试模式默认开启以避免误操作 生产环境下使用该选项将其关闭",
+        action="store_true",
+    )
+    args = parser.parse_args()
+
+    config = ReviewerThread.get_config()
+
+
+    async def main():
+        tbr.set_BDUSS_key(config['Reviewer']['BDUSS_key'])
+        tbr.set_fname(config['Reviewer']['fname'])
+
+        if args.no_test:
+            with tbr.no_test():
+                await tbr.run()
+        else:
+            await tbr.run(20.0)
+    asyncio.run(main())
+

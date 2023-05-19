@@ -14,10 +14,9 @@ from aiotieba.api.get_comments._classdef import Contents_cp
 from aiotieba.api.get_posts._classdef import Contents_p, Contents_pt
 from aiotieba.config import tomllib
 
-with open("cmd_handler.toml", 'rb') as file:
+with open("setting.toml", 'rb') as file:
     LISTEN_CONFIG = tomllib.load(file)
-    FORUMS = {f['fname']: f for f in LISTEN_CONFIG['Forum']}
-    del LISTEN_CONFIG['Forum']
+    FORUMS = {f['fname']: f for f in LISTEN_CONFIG['Handler']['Forum']}
 
 
 class TimerRecorder(object):
@@ -240,7 +239,7 @@ class Listener(object):
     ]
 
     def __init__(self) -> None:
-        self.listener = tb.Client(LISTEN_CONFIG['listener'])
+        self.listener = tb.Client(LISTEN_CONFIG['Handler']['listener'])
         self.admins = {}
         self.time_recorder = TimerRecorder(3600 * 12, 10)
 
