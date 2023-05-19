@@ -159,7 +159,7 @@ class ReviewerThread(Thread):
                 with tbr.no_test():
                     await tbr.run()
             else:
-                await tbr.run()
+                await tbr.run(20)
         except asyncio.CancelledError:
             pass
 
