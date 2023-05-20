@@ -1,6 +1,5 @@
 ./venv/
 /aiotieba.toml
-/cmd_handler.toml
 /setting.toml
 /.cache/
 /keyword.json

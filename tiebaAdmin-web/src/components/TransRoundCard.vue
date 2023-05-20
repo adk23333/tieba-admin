@@ -7,14 +7,14 @@
 <style scoped>
 .card {
     position: relative;
-    width: 280px;
+    min-width: 260px;
 
     margin: 30px;
     /* 设置阴影 */
     box-shadow: 20px 20px 50px rgba(0, 0, 0, 0.5);
     border-radius: 15px;
     /* 设置card的背景色 */
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.10);
     overflow: hidden;
     display: flex;
     justify-content: center;

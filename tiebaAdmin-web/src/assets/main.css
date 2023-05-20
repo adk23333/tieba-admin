@@ -7,13 +7,52 @@
 
     font-weight: normal;
 }
-
-a,
-.green {
-    text-decoration: none;
-    color: hsla(160, 100%, 37%, 1);
-    transition: 0.4s;
+:root:root {
+    --van-field-label-color: white;
 }
+.entry-cards {
+    position: relative;
+    display: flex; /* flex容器（flex container） */
+    justify-content: center; /* 定义项目在主轴上的对齐方式 */
+    align-items: center; /* 定义项目在竖直方向上对齐方式 */
+    max-width: 1200px;
+    flex-wrap: wrap; /* 定义项目是否换行以及如何换行  */
+    z-index: 1;
+}
+
+.entry-cards h2 {
+    color: white;
+}
+
+.entry-cards p {
+    padding-top: 0.15rem;
+    color: white;
+}
+
+.van-cell.van-cell--center {
+    background: rgba(255, 255, 255, 0);
+    --van-cell-text-color: white;
+}
+
+.van-cell-group.van-cell-group--inset {
+    margin: 0;
+    background: rgba(255, 255, 255, 0);
+}
+
+.van-cell.van-field.van-field--label-top {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+textarea {
+	caret-color: white;
+}
+
+.van-button.van-button--default {
+    color: white;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(16, 16, 16, 0.51);
+}
+
 
 @media (min-width: 1024px) {
     body::after {
@@ -41,28 +80,5 @@ a,
 
     }
 
-    .entry-cards {
-        position: relative;
-        display: flex; /* flex容器（flex container） */
-        justify-content: center; /* 定义项目在主轴上的对齐方式 */
-        align-items: center; /* 定义项目在竖直方向上对齐方式 */
-        max-width: 1200px;
-        flex-wrap: wrap; /* 定义项目是否换行以及如何换行  */
-        z-index: 1;
-    }
-
-    .entry-cards h2 {
-        color: #ffffff;
-    }
-
-    .entry-cards p {
-        padding-top: 0.15rem;
-        color: #ffffff;
-    }
-
-    .van-cell.van-cell--center {
-        background: rgba(255, 255, 255, 0);
-        --van-cell-text-color: #ffffff;
-    }
 
 }

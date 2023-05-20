@@ -6,11 +6,11 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
-import {Button, Card, Cell, CellGroup, Col, Row, Switch} from "vant";
+import {Button, Card, Cell, CellGroup, Col, Field, Row, Switch} from "vant";
 
 const app = createApp(App)
 
 app.use(createPinia())
-app.use(router).use(Card).use(Button).use(CellGroup).use(Cell).use(Row).use(Col).use(Switch)
+app.use(router).use(Card).use(Button).use(CellGroup).use(Cell).use(Row).use(Col).use(Switch).use(Field)
 
 app.mount('#app')
