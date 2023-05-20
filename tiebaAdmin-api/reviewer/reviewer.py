@@ -14,7 +14,7 @@ from aiotieba_reviewer import Ops, Punish, TypeObj, imgproc
 from cacheout import Cache
 
 sign_check_exp = re.compile(r'企鹅|扣扣', re.I)
-KEY_WORD = ""
+KEY_WORD = []
 
 # pip install cacheout
 # 为高开销函数创建缓存
@@ -157,9 +157,9 @@ class ReviewerThread(Thread):
         try:
             if not self.isTest:
                 with tbr.no_test():
-                    await tbr.run()
+                    await tbr.run(10.0)
             else:
-                await tbr.run(20)
+                await tbr.run(20.0)
         except asyncio.CancelledError:
             pass
 
@@ -186,11 +186,12 @@ if __name__ == "__main__":
     async def main():
         tbr.set_BDUSS_key(config['Reviewer']['BDUSS_key'])
         tbr.set_fname(config['Reviewer']['fname'])
-
+        global KEY_WORD
+        KEY_WORD = ["123456"]
         if args.no_test:
             with tbr.no_test():
                 await tbr.run()
         else:
-            await tbr.run(20.0)
+            await tbr.run(35.0)
     asyncio.run(main())
 

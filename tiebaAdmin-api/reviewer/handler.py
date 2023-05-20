@@ -22,9 +22,11 @@ with open("setting.toml", 'rb') as file:
 class TimerRecorder(object):
     """
     时间记录器
+
     Args:
         shift_sec (float): 启动时允许解析shift_sec秒之前的at
         post_interval (float): 两次post_add之间需要的间隔秒数
+
     Attributes:
         last_parse_time (float): 上次解析at信息的时间(以百度服务器为准)
         last_post_time (float): 上次发送回复的时间(以百度服务器为准)
@@ -120,11 +122,9 @@ class Context(object):
         if self._init_full_success:
             return True
 
-        if self.at.is_floor:
+        if self.at.is_comment:
             await asyncio.sleep(3.0)
-            comments = await self.admin.get_comments(self.tid, self.pid, is_floor=True)
-            if not comments:
-                return False
+            comments = await self.admin.get_comments(self.tid, self.pid, is_comment=True)
             self.parent = comments.post
             for comment in comments:
                 if comment.pid == self.pid:
@@ -133,8 +133,6 @@ class Context(object):
         elif self.at.is_thread:
             await asyncio.sleep(3.0)
             posts = await self.admin.get_posts(self.tid, rn=0)
-            if not posts:
-                return False
             self.text = posts.thread.text
             share_thread = posts.thread.share_origin
             posts = await self.admin.get_posts(share_thread.tid, rn=0)
@@ -145,19 +143,21 @@ class Context(object):
             posts = await self.admin.get_posts(self.tid, pn=8192, rn=20, sort=tb.enums.PostSortType.DESC)
             for post in posts:
                 if post.pid == self.pid:
-                    self.text = post.text
+                    self.text = post.contents.text
                     break
             posts = await self.admin.get_posts(self.tid, rn=0)
             self.parent = posts.thread
 
+        self.__init_args()
         self._init_full_success = True
+
         return True
 
     def __init_args(self) -> None:
         self._args = []
         self._cmd_type = ''
 
-        text = re.sub(r'@.*? ', '', self.text)
+        text = re.sub(r'.*?@.*? ', '', self.text, count=1)
 
         self._args = [arg.lstrip(' ') for arg in text.split(' ')]
         if self._args:
@@ -202,6 +202,7 @@ class Context(object):
 def check_and_log(need_permission: int = 0, need_arg_num: int = 0):
     """
     装饰器实现鉴权和参数数量检查
+
     Args:
         need_permission (int, optional): 需要的权限级别
         need_arg_num (bool, optional): 需要的参数数量
@@ -306,7 +307,7 @@ class Listener(object):
             return 0
         if (last_sign := s.rfind(sign)) == -1:
             return 0
-        sub_str = s[first_sign + 1: last_sign]
+        sub_str = s[first_sign + 1 : last_sign]
         if not sub_str.isdecimal():
             return 0
         return int(sub_str)
@@ -364,8 +365,10 @@ class Listener(object):
         恢复删帖
         """
 
+        await ctx.init_full()
+
         _id = ctx.args[0]
-        _id = _id[_id.rfind('#') + 1:]
+        _id = _id[_id.rfind('#') + 1 :]
         _id = int(_id)
 
         if _id < 1e11:
@@ -637,7 +640,7 @@ class Listener(object):
 
         step = 30
         for i in range(0, len(pids) % 30, 30):
-            await ctx.admin.del_posts(ctx.fname, pids[i: i + step])
+            await ctx.admin.del_posts(ctx.fname, pids[i : i + step])
 
     @check_and_log(need_permission=4, need_arg_num=2)
     async def cmd_set(self, ctx: Context) -> None:
@@ -682,7 +685,7 @@ class Listener(object):
 
         if len(ctx.args) > 2:
             index = int(ctx.args[0])
-            imgs = imgs[index - 1: index]
+            imgs = imgs[index - 1 : index]
             permission = int(ctx.args[1])
             note = ctx.args[2]
         else:
@@ -713,7 +716,7 @@ class Listener(object):
 
         if ctx.args:
             index = int(ctx.args[0])
-            imgs = imgs[index - 1: index]
+            imgs = imgs[index - 1 : index]
 
         for img in imgs:
             image = await self.listener.get_image(img.src)
@@ -765,48 +768,6 @@ class Listener(object):
 
         if await ctx.admin.blacklist_del(ctx.fname, user.user_id):
             await ctx.admin.del_post(ctx.fname, ctx.pid)
-
-    @check_and_log(need_permission=2, need_arg_num=0)
-    async def cmd_water(self, ctx: Context) -> None:
-        """
-        water指令
-        将指令所在主题帖标记为无关水，并临时屏蔽
-        """
-
-        if await ctx.admin_db.add_tid(ctx.tid, tag=1) and await ctx.admin.hide_thread(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.fname, ctx.pid)
-
-    @check_and_log(need_permission=2, need_arg_num=0)
-    async def cmd_unwater(self, ctx: Context) -> None:
-        """
-        unwater指令
-        清除指令所在主题帖的无关水标记，并立刻解除屏蔽
-        """
-
-        if await ctx.admin_db.del_tid(ctx.tid) and await ctx.admin.unhide_thread(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.fname, ctx.pid)
-
-    @check_and_log(need_permission=3, need_arg_num=1)
-    async def cmd_water_restrict(self, ctx: Context) -> None:
-        """
-        water_restrict指令
-        控制当前吧的云审查脚本的无关水管控状态
-        """
-
-        if ctx.args[0] == "enter":
-            if await ctx.admin_db.add_tid(0, tag=1):
-                await ctx.admin.del_post(ctx.fname, ctx.pid)
-        elif ctx.args[0] == "exit":
-            if await ctx.admin_db.add_tid(0, tag=0):
-                await ctx.admin.del_post(ctx.fname, ctx.pid)
-            limit = 128
-            tids = await ctx.admin_db.get_tid_list(1, limit=limit)
-            while 1:
-                for tid in tids:
-                    if await ctx.admin.unhide_thread(ctx.fname, tid):
-                        await ctx.admin_db.add_tid(tid, tag=1)
-                if len(tids) != limit:
-                    break
 
     @check_and_log(need_permission=1, need_arg_num=0)
     async def cmd_ping(self, ctx: Context) -> None:
