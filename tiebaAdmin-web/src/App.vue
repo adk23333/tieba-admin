@@ -12,7 +12,7 @@ onMounted(() => {
 
 const reviewerStatus = ref(false);
 const revLoading = ref(false);
-const switchReviewerStatus = (newValue) => {
+const switchReviewerStatus = (newValue: boolean) => {
     const str = newValue ? "打开" : "关闭";
     showConfirmDialog({
         title: '警告',
@@ -65,7 +65,7 @@ const switchBtn = () => {
 
 const handlerStatus = ref(false);
 const hdlLoading = ref(false);
-const switchHandlerStatus = (newValue) => {
+const switchHandlerStatus = (newValue: boolean) => {
     const str = newValue ? "打开" : "关闭";
     showConfirmDialog({
         title: '警告',
