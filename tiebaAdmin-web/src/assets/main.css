@@ -46,8 +46,11 @@
 textarea {
 	caret-color: white;
 }
+.van-field__body .van-field__control {
+    color: rgba(255, 255, 255, 0.4);
+}
 
-.van-button.van-button--default {
+.card .van-button.van-button--default {
     color: white;
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(16, 16, 16, 0.51);

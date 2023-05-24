@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import TransRoundCard from "@/components/TransRoundCard.vue";
 import {onMounted, ref} from "vue";
-import {showConfirmDialog} from 'vant';
-import {getKeywords, handlerInfo, reviewerInfo} from "@/utils/api";
+import {closeToast, showConfirmDialog, showLoadingToast, showNotify} from 'vant';
+import {getKeywords, handlerInfo, handlerSwitch, reviewerInfo, reviewerSwitch, updateKeywords} from "@/utils/api";
 
 onMounted(() => {
     reviewerInfo(res => reviewerStatus.value = res.data.data.status);
@@ -11,6 +11,7 @@ onMounted(() => {
 })
 
 const reviewerStatus = ref(false);
+const revLoading = ref(false);
 const switchReviewerStatus = (newValue) => {
     const str = newValue ? "打开" : "关闭";
     showConfirmDialog({
@@ -18,6 +19,18 @@ const switchReviewerStatus = (newValue) => {
         message: `是否${str}审查器？`,
     }).then(() => {
         reviewerStatus.value = newValue;
+        revLoading.value = true;
+        reviewerSwitch(res => {
+                if(newValue===res.data.data.status){
+                    showNotify({type: 'success', message: res.data.msg});
+                }else {
+                    showNotify({type: 'warning', message:'服务端发生了一些意外，切换失败'});
+                }
+                reviewerStatus.value = res.data.data.status;
+                revLoading.value = false;
+            },
+            () => showNotify({type: 'danger', message: "请检查您的网络是否正常"}),
+        );
     }).catch(() => {
         reviewerStatus.value = !newValue;
     });
@@ -25,8 +38,33 @@ const switchReviewerStatus = (newValue) => {
 
 const keywords = ref("");
 const editEnable = ref(false);
+const enableBtnText = ref("修改");
+const switchBtn = () => {
+    if (editEnable.value) {
+        showLoadingToast({
+            duration: 0,
+            message: "更新关键词中...",
+            forbidClick: true,
+        })
+        updateKeywords(keywords.value,
+            res => {
+                showNotify({type: 'success', message: res.data.msg});
+                editEnable.value = !editEnable.value;
+                enableBtnText.value = editEnable.value ? '保存' : '修改';
+            },
+            err => {
+                showNotify({type: 'danger', message: err.toString()});
+            },
+            () => closeToast());
+    } else {
+        editEnable.value = !editEnable.value;
+        enableBtnText.value = editEnable.value ? '保存' : '修改';
+    }
 
-const handlerStatus = ref(false)
+}
+
+const handlerStatus = ref(false);
+const hdlLoading = ref(false);
 const switchHandlerStatus = (newValue) => {
     const str = newValue ? "打开" : "关闭";
     showConfirmDialog({
@@ -34,6 +72,20 @@ const switchHandlerStatus = (newValue) => {
         message: `是否${str}权限管理？`,
     }).then(() => {
         handlerStatus.value = newValue;
+        hdlLoading.value = true;
+
+        handlerSwitch(res => {
+                if(newValue===res.data.data.status){
+                    showNotify({type: 'success', message: res.data.msg});
+                }else {
+                    showNotify({type: 'warning', message:'服务端发生了一些意外，切换失败'});
+                }
+                handlerStatus.value = res.data.data.status;
+                hdlLoading.value = false;
+            },
+            () => showNotify({type: 'danger', message: "请检查您的网络是否正常"}),
+        );
+
     }).catch(() => {
         handlerStatus.value = !newValue;
     });
@@ -49,7 +101,8 @@ const switchHandlerStatus = (newValue) => {
                     <template #right-icon>
                         <van-switch active-color="#00ff00"
                                     v-model="reviewerStatus"
-                                    @update:model-value="switchReviewerStatus"/>
+                                    @update:model-value="switchReviewerStatus"
+                                    :loading="revLoading"/>
                     </template>
                 </van-cell>
                 <van-cell-group inset>
@@ -66,7 +119,7 @@ const switchHandlerStatus = (newValue) => {
                 </van-cell-group>
                 <van-cell center title="">
                     <template #right-icon>
-                        <van-button round size="small">修改</van-button>
+                        <van-button round size="small" @click="switchBtn" :text="enableBtnText"></van-button>
                     </template>
                 </van-cell>
             </template>
@@ -78,7 +131,8 @@ const switchHandlerStatus = (newValue) => {
                     <template #right-icon>
                         <van-switch active-color="#00ff00"
                                     v-model="handlerStatus"
-                                    @update:model-value="switchHandlerStatus"/>
+                                    @update:model-value="switchHandlerStatus"
+                                    :loading="hdlLoading"/>
                     </template>
                 </van-cell>
             </template>
