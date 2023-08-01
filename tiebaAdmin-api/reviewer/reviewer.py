@@ -1,70 +1,73 @@
 import argparse
 import asyncio
 import re
-from threading import Thread, Event
+from threading import Event
+from threading import Thread as pyThread
 from typing import List, Optional, Tuple
 
 import aiotieba as tb
-import aiotieba_reviewer as tbr
 import tomli
-from aiotieba.api.get_homepage import Thread_home, UserInfo_home
-from aiotieba.api.get_posts import UserInfo_pt
+from aiotieba.api.get_threads import Thread
+from aiotieba.api.profile import Thread_pf, UserInfo_pf
 from aiotieba.typing import Comment, Post
-from aiotieba_reviewer import Ops, Punish, TypeObj, imgproc
 from cacheout import Cache
+
+import aiotieba_reviewer as tbr
+from aiotieba_reviewer import Ops, Punish, TypeObj, imgproc
 
 sign_check_exp = re.compile(r'企鹅|扣扣', re.I)
 KEY_WORD = []
 
+
 # pip install cacheout
 # 为高开销函数创建缓存
 # @Cache(maxsize=256).memoize()
-async def portrait_hasQR(client: tb.Client, portrait: str) -> bool:
-    pimg = await client.get_portrait(portrait, 'l')
-    if pimg.size and imgproc.has_QRcode(pimg):
-        return True
-    return False
+# async def portrait_hasQR(client: tb.Client, portrait: str) -> bool:
+#     pimg = await client.get_portrait(portrait, 'l')
+#     if pimg.size and imgproc.has_QRcode(pimg):
+#         return True
+#     return False
 
 
 # 同理 缓存返回的结果
-@Cache(maxsize=64).memoize()
-async def get_homepage(client: tb.Client, portrait: str) -> Tuple[UserInfo_home, List[Thread_home]]:
-    return await client.get_homepage(portrait, with_threads=True)
+# @Cache(maxsize=64).memoize()
+# async def get_homepage(client: tb.Client, user_id: int) -> Tuple[UserInfo_pf, List[Thread_pf]]:
+#     return await client.get_homepage(user_id)
 
 
-# 使用装饰器将以下函数设置为针对主题帖的checker
-@tbr.reviewer.thread.set_checker()
-async def check_thread(thread: Thread) -> Optional[Punish]:
-    # 水经验
-    # if thread.is_help:
-    #     if re.search(r'氵|\+3|➕3|加三|加3|经验|jy', thread.text):
-    #         return Punish(thread, Ops.DELETE, 1, note="单开水楼")
-
-    user: UserInfo_pt = thread.user
-
-    # 作图广告
-    for at in thread.contents.ats:
-        if at.user_id == 4928198503:
-            if user.level == 1:
-                return Punish(thread, Ops.DELETE, 10, note="作图广告")
-            else:
-                return Punish(thread, Ops.DELETE, note="作图广告")
-
-    client = await tbr.get_client()
-
-    # 老用户提早返回 跳过后续检查
-    if user.level >= 4 or user.glevel >= 4 or user.priv_like == 3:
-        return
-
-    hpuser, hpthreads = await get_homepage(client, user.portrait)
-
-    # 用户个性签名是否包含违规内容
-    if sign_check_exp.search(hpuser.sign):
-        return Punish(thread, Ops.DELETE, 10, note="麦片sig")
-
-    # 头像是否包含二维码
-    if await portrait_hasQR(client, user.portrait):
-        return Punish(thread, Ops.DELETE, 10, note="头像广告")
+# # 使用装饰器将以下函数设置为针对主题帖的checker
+# @tbr.reviewer.thread.set_checker()
+# async def check_thread(thread: Thread) -> Optional[Punish]:
+#     # 水经验
+#     if thread.is_help:
+#         if re.search(r'氵|\+3|➕3|加三|加3|经验|jy', thread.text):
+#             return Punish(thread, Ops.DELETE, 1, note="单开水楼")
+#
+#     user = thread.user
+#
+#     # 作图广告
+#     for at in thread.contents.ats:
+#         if at.user_id == 4928198503:
+#             if user.level == 1:
+#                 return Punish(thread, Ops.DELETE, 10, note="作图广告")
+#             else:
+#                 return Punish(thread, Ops.DELETE, note="作图广告")
+#
+#     client = await tbr.get_client()
+#
+#     # 老用户提早返回 跳过后续检查
+#     if user.level >= 4 or user.glevel >= 4 or user.priv_like == 3:
+#         return
+#
+#     hpuser, hpthreads = await get_homepage(client, user.user_id)
+#
+#     # 用户个性签名是否包含违规内容
+#     if sign_check_exp.search(hpuser.sign):
+#         return Punish(thread, Ops.DELETE, 10, note="麦片sig")
+#
+#     # 头像是否包含二维码
+#     if await portrait_hasQR(client, user.portrait):
+#         return Punish(thread, Ops.DELETE, 10, note="头像广告")
 
 
 # 使用装饰器将以下函数设置为针对回复楼层的checker
@@ -124,7 +127,7 @@ async def check_text(obj: TypeObj) -> Optional[Punish]:
             return Punish(obj, Ops.DELETE, note="适用于3级以下用户的违规词汇")
 
 
-class ReviewerThread(Thread):
+class ReviewerThread(pyThread):
     TimeInterval = 0.0
     Order = 0
     Task = None
@@ -193,5 +196,6 @@ if __name__ == "__main__":
                 await tbr.run()
         else:
             await tbr.run(35.0)
-    asyncio.run(main())
 
+
+    asyncio.run(main())
