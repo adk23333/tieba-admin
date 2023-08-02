@@ -1,6 +1,5 @@
-opencv-contrib-python-headless==4.7.0.72
-aiotieba==3.4.0
-aiotieba_reviewer==0.1.8
+aiotieba==3.6.0
+aiotieba_reviewer==0.3.0
 async_timeout==4.0.2
 cacheout==0.14.1
 sanic==23.3.0

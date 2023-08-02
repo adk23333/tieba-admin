@@ -243,7 +243,7 @@ class Listener(object):
     ]
 
     def __init__(self) -> None:
-        self.listener = tb.Client(LISTEN_CONFIG['listener'])
+        self.listener = tb.Client(LISTEN_CONFIG['Handler']['listener'])
         self.admins = {}
         self.time_recorder = TimerRecorder(3600 * 12, 10)
 
