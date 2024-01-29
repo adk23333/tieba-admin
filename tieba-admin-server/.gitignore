@@ -1,0 +1,6 @@
+.venv
+aiotieba.toml
+.cache
+log
+.idea
+.vscode
