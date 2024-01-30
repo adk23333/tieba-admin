@@ -1,3 +1,4 @@
+import asyncio
 from enum import Enum
 from typing import Tuple, Callable, Dict, Literal, List, Union, Coroutine, Any
 
@@ -176,10 +177,9 @@ class Reviewer:
             if not self.no_exec:
                 await executor.run()
 
-    async def run_with_client(self):
-        for client in self.clients:
-            for fname in self.clients[client]:
-                await self.check_threads(client, fname)
+    async def run_with_client(self, client: Client):
+        for fname in self.clients[client]:
+            await self.check_threads(client, fname)
 
     async def run(self):
         self.no_exec = await Config.filter(key="REVIEW_NO_EXEC").get_or_none()
@@ -200,4 +200,4 @@ class Reviewer:
                 self.clients[client] = []
                 self.clients[client].append(i[1])
 
-        await self.run_with_client()
+        await asyncio.gather(*[self.run_with_client(client) for client in self.clients])
