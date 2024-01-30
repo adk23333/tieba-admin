@@ -116,22 +116,22 @@ Initialize(app, authenticate=authenticate,
 
 @app.before_server_start
 async def init_server(_app):
-    if not await Config.filter(key="first").get_or_none():
-        await Config.create(key="first", v1=True)
+    if not await Config.get_bool(key="first"):
+        await Config.set_config(key="first", v1=True)
 
 
 @app.on_request
 async def first_login_check(rqt: Request):
-    config = await Config.filter(key="first").get_or_none()
-    if (config.v1 == str(True)) and rqt.path != '/api/first_login':
+    is_first = await Config.get_bool(key="first")
+    if is_first and rqt.path != '/api/first_login':
         return response.json({"is_first": True}, 403)
 
 
 @app.post('/api/first_login')
 async def first_login_api(rqt: Request):
     try:
-        config = await Config.filter(key="first").get()
-        if config.v1 == str(False):
+        is_first = await Config.get_bool(key="first")
+        if not is_first or is_first is not None:
             return response.json({"status": 403, "msg": "不是首次登录"})
         if not (rqt.form.get('BDUSS') and rqt.form.get('fname')
                 and rqt.form.get('password') and rqt.form.get('STOKEN')):
@@ -157,9 +157,7 @@ async def first_login_api(rqt: Request):
             user=user,
             permission=Permission.TopAdmin,
         )
-        config = await Config.filter(key="first").get()
-        config.v1 = False
-        await config.save()
+        await Config.set_config(key="first", v1=False)
         return response.json({"status": 200, "msg": "成功创建超级管理员"})
     except ArgException as err:
         return err_rps(err)

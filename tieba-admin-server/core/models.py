@@ -1,5 +1,7 @@
+import json
 from datetime import datetime
 from enum import IntEnum, unique
+from typing import Any, Optional
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -29,6 +31,25 @@ class Config(Model):
 
     class Meta:
         table = "configs"
+
+    @staticmethod
+    async def get_bool(key: str) -> Optional[bool]:
+        rst = await Config.filter(key=key).get_or_none()
+        if rst:
+            return bool(rst.v1)
+
+    @staticmethod
+    async def get_list(key: str) -> Optional[bool]:
+        rst = await Config.filter(key=key).get_or_none()
+        if rst:
+            return json.loads(rst.v1)
+
+    @staticmethod
+    async def set_config(key: str, v1: Any):
+        rst = await Config.filter(key=key).get_or_none()
+        if not rst:
+            rst = Config(key=key, v1=str(v1))
+        await rst.save()
 
 
 class User(Model):

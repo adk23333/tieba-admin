@@ -182,9 +182,9 @@ class Reviewer:
             await self.check_threads(client, fname)
 
     async def run(self):
-        self.no_exec = await Config.filter(key="REVIEW_NO_EXEC").get_or_none()
+        self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
         if self.no_exec is None:
-            await Config.create(key="REVIEW_NO_EXEC", v1=str(True))
+            await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
             self.no_exec = True
         else:
             self.no_exec = self.no_exec.v1 == str(True)
