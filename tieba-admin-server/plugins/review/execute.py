@@ -31,6 +31,7 @@ class Comment(Enum):
 
 UnitOptionType = Union[OptionType, User, Thread, Post, Comment]
 
+
 @dataclass
 class Executor(object):
     obj: Union[Tb_Thread, Tb_Post, Tb_Comment, None] = None

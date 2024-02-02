@@ -179,15 +179,16 @@ class Reviewer:
 
     async def run_with_client(self, client: Client):
         for fname in self.clients[client]:
-            await self.check_threads(client, fname)
+            rst = await Config.get_list("REVIEW_CHECK_FNAME")
+            if rst:
+                if fname not in rst:
+                    await self.check_threads(client, fname)
 
     async def run(self):
         self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
         if self.no_exec is None:
             await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
             self.no_exec = True
-        else:
-            self.no_exec = self.no_exec.v1 == str(True)
         temp = await ForumUserPermission.filter(permission__gte=Permission.Admin.value).all()
         user_with_fname: List[Tuple[User, str]] = [(await t.user.get(), t.fname) for t in temp]
         for i in user_with_fname:
