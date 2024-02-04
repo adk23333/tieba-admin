@@ -11,7 +11,7 @@ from .models import Post as RPost
 from .models import Thread as RThread
 
 CheckFunc = Callable[[Union[Thread, Post, Comment], Client], Coroutine[Any, Any, execute.Executor]]
-Check = Dict[Literal['function'], Union[CheckFunc]]
+Check = Dict[Literal['function', 'enable_forum', 'disable_forum'], Union[CheckFunc, Tuple[str]]]
 CheckMap = Dict[Literal['post', 'comment', 'thread'], List[Check]]
 
 
@@ -38,41 +38,51 @@ class Reviewer:
         for client in self.clients.keys():
             client.__aexit__()
 
-    def comment(self):
+    def comment(self, enable_forum: Tuple[str] = (), disable_forum: Tuple[str] = ()):
         def wrapper(func: CheckFunc):
             self.check_map['comment'].append({
                 'function': func,
+                'enable_forum': enable_forum,
+                'disable_forum': disable_forum,
             })
             return func
 
         return wrapper
 
-    def post(self):
-
+    def post(self, enable_forum: Tuple[str] = (), disable_forum: Tuple[str] = ()):
         def wrapper(func: CheckFunc):
             self.check_map['post'].append({
                 'function': func,
+                'enable_forum': enable_forum,
+                'disable_forum': disable_forum,
             })
             return func
 
         return wrapper
 
-    def thread(self):
+    def thread(self, enable_forum: Tuple[str] = (), disable_forum: Tuple[str] = ()):
         def wrapper(func: CheckFunc):
             self.check_map['thread'].append({
                 'function': func,
+                'enable_forum': enable_forum,
+                'disable_forum': disable_forum,
             })
             return func
 
         return wrapper
 
-    def route(self, _type: List[Literal['thread', 'post', 'comment']]):
+    def route(self,
+              _type: List[Literal['thread', 'post', 'comment']],
+              enable_forum: Tuple[str] = (),
+              disable_forum: Tuple[str] = ()):
         def wrapper(func: CheckFunc):
             for __type in _type:
                 if not (__type == 'thread' or __type == 'post' or __type == 'comment'):
                     raise TypeError
                 self.check_map[__type].append({
                     'function': func,
+                    'enable_forum': enable_forum,
+                    'disable_forum': disable_forum,
                 })
             return func
 
@@ -99,6 +109,10 @@ class Reviewer:
             executor = execute.Executor()
             if not checked:
                 for check in self.check_map['thread']:
+                    if (fname in check['enable_forum']) or (fname not in check['disable_forum']):
+                        pass
+                    else:
+                        continue
                     _executor = await check['function'](thread, client)
                     if not _executor:
                         raise TypeError("Need to return Executor object")
@@ -141,6 +155,10 @@ class Reviewer:
             executor = execute.Executor()
             if not checked:
                 for check in self.check_map['post']:
+                    if (post.fname in check['enable_forum']) or (post.fname not in check['disable_forum']):
+                        pass
+                    else:
+                        continue
                     _executor = await check['function'](post, client)
                     if not _executor:
                         raise TypeError("Need to return Executor object")
@@ -169,6 +187,10 @@ class Reviewer:
         for comment in comments:
             executor = execute.Executor()
             for check in self.check_map['comment']:
+                if (comment.fname in check['enable_forum']) or (comment.fname not in check['disable_forum']):
+                    pass
+                else:
+                    continue
                 _executor = await check['function'](comment, client)
                 if not _executor:
                     raise TypeError("Need to return Executor object")
