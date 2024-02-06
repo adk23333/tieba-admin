@@ -43,7 +43,7 @@ class Reviewer:
             await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
             self.no_exec = True
 
-        temp = await ForumUserPermission.filter(permission__gte=Permission.Admin.value).all()
+        temp = await ForumUserPermission.filter(permission__gte=Permission.HighAdmin.value).all()
         fnames = [t.fname for t in temp]
         await RFunction.filter(function__not_in=self.check_name_map).delete()
         old_name_map: List[str] = [i.function for i in (await RFunction.all())]
