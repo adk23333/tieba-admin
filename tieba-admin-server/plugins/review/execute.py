@@ -59,7 +59,7 @@ class Executor(object):
             case Thread.Delete:
                 await self.client.del_thread(self.obj.fid, self.obj.tid)
             case Post.Delete:
-                await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
+                print(await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid))
             case Comment.Delete:
                 await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
 
@@ -92,7 +92,7 @@ def hide(client: Client, thread: Thread, day: int = 1):
 def delete(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Literal[-1, 0, 1, 3, 10] = 0):
     if isinstance(obj, Tb_Thread):
         option = Thread.Delete
-    elif isinstance(obj, Post):
+    elif isinstance(obj, Tb_Post):
         option = Post.Delete
     elif isinstance(obj, Tb_Comment):
         option = Comment.Delete

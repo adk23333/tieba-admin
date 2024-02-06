@@ -136,7 +136,7 @@ class Reviewer:
 
         need_check_post: List[Thread] = []
         for thread, checked in threads:
-            executor = execute.Executor()
+            executor = execute.Executor(client=client, obj=thread)
             if not checked:
                 for check in self.check_map['thread']:
                     func_enable = await RFunction.get(fname=fname, function=check['function'].__name__)
@@ -181,7 +181,7 @@ class Reviewer:
 
         need_check_comment: List[Post] = []
         for post, checked in posts:
-            executor = execute.Executor()
+            executor = execute.Executor(client=client, obj=post)
             if not checked:
                 for check in self.check_map['post']:
                     func_enable = await RFunction.get(fname=post.fname, function=check['function'].__name__)
@@ -213,7 +213,7 @@ class Reviewer:
             count += 1
 
         for comment in comments:
-            executor = execute.Executor()
+            executor = execute.Executor(client=client, obj=comment)
             for check in self.check_map['comment']:
                 func_enable = await RFunction.get(fname=comment.fname, function=check['function'].__name__)
                 if not func_enable.enable:
