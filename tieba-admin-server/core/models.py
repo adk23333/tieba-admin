@@ -14,15 +14,13 @@ password_hasher = PasswordHasher()
 
 @unique
 class Permission(IntEnum):
-    TopAdmin = 5
-    Admin = 4
-    TopOperator = 3
-    Operator = 2
+    Master = 5
+    SuperAdmin = 4
+    HighAdmin = 3
+    MinAdmin = 2
     Creator = 1
     Ordinary = 0
-    Hide = -1001
-    Block = -2001
-    Black = -3
+    Black = -10000
 
 
 class Config(Model):
