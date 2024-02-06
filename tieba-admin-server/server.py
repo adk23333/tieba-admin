@@ -138,9 +138,7 @@ async def first_login_api(rqt: Request):
             raise ArgException
         validate_password(rqt.form.get('password'))
 
-        async with aiotieba.Client() as client:
-            client.account.BDUSS = rqt.form.get('BDUSS')
-            client.account.STOKEN = rqt.form.get('STOKEN')
+        async with aiotieba.Client(rqt.form.get('BDUSS'), rqt.form.get('STOKEN')) as client:
             user = await client.get_self_info()
             fid = await client.get_fid(rqt.form.get('fname'))
         user = await User.create(

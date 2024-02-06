@@ -226,9 +226,7 @@ class Reviewer:
         temp = await self.init_config()
         user_with_fname: List[Tuple[User, str]] = [(await t.user.get(), t.fname) for t in temp]
         for i in user_with_fname:
-            client = await Client().__aenter__()
-            client.account.BDUSS = i[0].BDUSS
-            client.account.STOKEN = i[0].STOKEN
+            client = await Client(i[0].BDUSS, i[0].STOKEN).__aenter__()
             try:
                 self.clients[client].append(i[1])
             except KeyError:
