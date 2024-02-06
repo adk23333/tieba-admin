@@ -54,6 +54,7 @@ class Reviewer:
                 if name not in old_name_map:
                     func_list.append(RFunction(function=name, fname=forum))
         await RFunction.bulk_create(func_list)
+
         return temp
 
     def __del__(self):
@@ -138,6 +139,9 @@ class Reviewer:
             executor = execute.Executor()
             if not checked:
                 for check in self.check_map['thread']:
+                    func_enable = await RFunction.get(fname=fname, function=check['function'].__name__)
+                    if not func_enable.enable:
+                        continue
                     _executor = await check['function'](thread, client)
                     if not _executor:
                         raise TypeError("Need to return Executor object")
@@ -180,6 +184,9 @@ class Reviewer:
             executor = execute.Executor()
             if not checked:
                 for check in self.check_map['post']:
+                    func_enable = await RFunction.get(fname=post.fname, function=check['function'].__name__)
+                    if not func_enable.enable:
+                        continue
                     _executor = await check['function'](post, client)
                     if not _executor:
                         raise TypeError("Need to return Executor object")
@@ -208,6 +215,9 @@ class Reviewer:
         for comment in comments:
             executor = execute.Executor()
             for check in self.check_map['comment']:
+                func_enable = await RFunction.get(fname=comment.fname, function=check['function'].__name__)
+                if not func_enable.enable:
+                    continue
                 _executor = await check['function'](comment, client)
                 if not _executor:
                     raise TypeError("Need to return Executor object")
