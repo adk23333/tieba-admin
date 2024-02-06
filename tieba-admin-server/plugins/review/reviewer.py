@@ -165,10 +165,10 @@ class Reviewer:
                 prev_post = await RPost.filter(pid=post.pid).get_or_none()
                 if prev_post:
                     if post.reply_num < prev_post.reply_num:
-                        await RThread.filter(pid=post.pid).update(reply_num=post.reply_num)
+                        await RPost.filter(pid=post.pid).update(reply_num=post.reply_num)
                     elif post.reply_num > prev_post.reply_num:
                         posts.append((post, True))
-                        await RThread.filter(pid=post.pid).update(reply_num=post.reply_num)
+                        await RPost.filter(pid=post.pid).update(reply_num=post.reply_num)
                 else:
                     posts.append((post, False))
                     await RPost.create(pid=post.pid, tid=tid, reply_num=post.reply_num)
