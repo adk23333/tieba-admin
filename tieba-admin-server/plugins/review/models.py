@@ -11,7 +11,7 @@ class Thread(Model):
     date_updated: datetime = fields.DatetimeField(auto_now=True)
 
     class Meta:
-        table = "thread"
+        table = "review_thread"
 
 
 class Post(Model):
@@ -23,4 +23,25 @@ class Post(Model):
     date_updated: datetime = fields.DatetimeField(auto_now=True)
 
     class Meta:
-        table = "post"
+        table = "review_post"
+
+
+class Forum(Model):
+    fname = fields.CharField(max_length=60, pk=True)
+    enable = fields.BooleanField(default=False)
+    date_created: datetime = fields.DatetimeField(auto_now_add=True)
+    date_updated: datetime = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "review_forum"
+
+
+class Function(Model):
+    function = fields.CharField(max_length=64, pk=True)
+    fname = fields.ForeignKeyField("models.Forum", related_name="forum_fname")
+    enable = fields.BooleanField(default=False)
+    date_created: datetime = fields.DatetimeField(auto_now_add=True)
+    date_updated: datetime = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "review_function"

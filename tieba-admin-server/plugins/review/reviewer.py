@@ -7,11 +7,13 @@ from aiotieba.typing import Threads, Thread, Posts, Post, Comment
 
 from core.models import ForumUserPermission, Permission, User, Config
 from . import execute
+from .models import Forum as RForum
+from .models import Function as RFunction
 from .models import Post as RPost
 from .models import Thread as RThread
 
 CheckFunc = Callable[[Union[Thread, Post, Comment], Client], Coroutine[Any, Any, execute.Executor]]
-Check = Dict[Literal['function', 'enable_forum', 'disable_forum'], Union[CheckFunc, Tuple[str]]]
+Check = Dict[Literal['function', 'kwargs'], Union[CheckFunc, Dict]]
 CheckMap = Dict[Literal['post', 'comment', 'thread'], List[Check]]
 
 
@@ -33,39 +35,65 @@ class Reviewer:
         self.check_map: CheckMap = {'comment': [], 'post': [], 'thread': []}
         self.clients: Dict[Client, List[str]] = {}
         self.no_exec = True
+        self.check_name_map = set()
+
+    async def init_config(self):
+        self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
+        if self.no_exec is None:
+            await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
+            self.no_exec = True
+
+        temp = await ForumUserPermission.filter(permission__gte=Permission.Admin.value).all()
+        fnames = [t.fname for t in temp]
+        await RFunction.filter(function__not_in=self.check_name_map).delete()
+        old_name_map: List[str] = [i.function for i in (await RFunction.all())]
+        func_list = []
+        for fname in fnames:
+            forum = await RForum.get_or_create(fname=fname)
+            for name in self.check_name_map:
+                if name not in old_name_map:
+                    func_list.append(RFunction(function=name, fname=forum))
+        await RFunction.bulk_create(func_list)
+        return temp
 
     def __del__(self):
         for client in self.clients.keys():
             client.__aexit__()
 
-    def comment(self, enable_forum: Tuple[str] = (), disable_forum: Tuple[str] = ()):
+    def comment(self, description: str = None):
         def wrapper(func: CheckFunc):
+            self.check_name_map.add(func.__name__)
             self.check_map['comment'].append({
                 'function': func,
-                'enable_forum': enable_forum,
-                'disable_forum': disable_forum,
+                'kwargs': {
+                    'description': description,
+                },
             })
             return func
 
         return wrapper
 
-    def post(self, enable_forum: Tuple[str] = (), disable_forum: Tuple[str] = ()):
+    def post(self, description: str = None):
         def wrapper(func: CheckFunc):
+            self.check_name_map.add(func.__name__)
             self.check_map['post'].append({
                 'function': func,
-                'enable_forum': enable_forum,
-                'disable_forum': disable_forum,
+                'kwargs': {
+                    'description': description,
+                },
             })
             return func
 
         return wrapper
 
-    def thread(self, enable_forum: Tuple[str] = (), disable_forum: Tuple[str] = ()):
+    def thread(self, description: str = None):
         def wrapper(func: CheckFunc):
+            self.check_name_map.add(func.__name__)
             self.check_map['thread'].append({
                 'function': func,
-                'enable_forum': enable_forum,
-                'disable_forum': disable_forum,
+                'kwargs': {
+                    'description': description,
+                },
             })
             return func
 
@@ -73,16 +101,17 @@ class Reviewer:
 
     def route(self,
               _type: List[Literal['thread', 'post', 'comment']],
-              enable_forum: Tuple[str] = (),
-              disable_forum: Tuple[str] = ()):
+              description: str = None):
         def wrapper(func: CheckFunc):
+            self.check_name_map.add(func.__name__)
             for __type in _type:
                 if not (__type == 'thread' or __type == 'post' or __type == 'comment'):
                     raise TypeError
                 self.check_map[__type].append({
                     'function': func,
-                    'enable_forum': enable_forum,
-                    'disable_forum': disable_forum,
+                    'kwargs': {
+                        'description': description,
+                    },
                 })
             return func
 
@@ -109,10 +138,6 @@ class Reviewer:
             executor = execute.Executor()
             if not checked:
                 for check in self.check_map['thread']:
-                    if (fname in check['enable_forum']) or (fname not in check['disable_forum']):
-                        pass
-                    else:
-                        continue
                     _executor = await check['function'](thread, client)
                     if not _executor:
                         raise TypeError("Need to return Executor object")
@@ -155,10 +180,6 @@ class Reviewer:
             executor = execute.Executor()
             if not checked:
                 for check in self.check_map['post']:
-                    if (post.fname in check['enable_forum']) or (post.fname not in check['disable_forum']):
-                        pass
-                    else:
-                        continue
                     _executor = await check['function'](post, client)
                     if not _executor:
                         raise TypeError("Need to return Executor object")
@@ -187,10 +208,6 @@ class Reviewer:
         for comment in comments:
             executor = execute.Executor()
             for check in self.check_map['comment']:
-                if (comment.fname in check['enable_forum']) or (comment.fname not in check['disable_forum']):
-                    pass
-                else:
-                    continue
                 _executor = await check['function'](comment, client)
                 if not _executor:
                     raise TypeError("Need to return Executor object")
@@ -201,17 +218,12 @@ class Reviewer:
 
     async def run_with_client(self, client: Client):
         for fname in self.clients[client]:
-            rst = await Config.get_list("REVIEW_CHECK_FNAME")
-            if rst:
-                if fname not in rst:
-                    await self.check_threads(client, fname)
+            rst = await RForum.get(fname=fname)
+            if rst.enable:
+                await self.check_threads(client, fname)
 
     async def run(self):
-        self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
-        if self.no_exec is None:
-            await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
-            self.no_exec = True
-        temp = await ForumUserPermission.filter(permission__gte=Permission.Admin.value).all()
+        temp = await self.init_config()
         user_with_fname: List[Tuple[User, str]] = [(await t.user.get(), t.fname) for t in temp]
         for i in user_with_fname:
             client = await Client().__aenter__()
