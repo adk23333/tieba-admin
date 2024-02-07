@@ -49,8 +49,7 @@ class Executor(object):
             case User.Block:
                 await self.client.block(self.obj.fid, self.obj.user.portrait, day=self.user_day)
             case User.Black:
-                pass
-                # TODO 确定黑名单是无限循环封禁还是使用官方黑名单
+                await self.client.add_bawu_blacklist(self.obj.fname, self.obj.user.portrait)
         match self.option:
             case OptionType.Empty:
                 pass
