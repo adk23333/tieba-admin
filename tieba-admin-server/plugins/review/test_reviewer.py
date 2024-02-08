@@ -1,7 +1,5 @@
 import unittest
 
-from tortoise import Tortoise
-
 from .checker import reviewer
 
 
@@ -10,10 +8,7 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         super().__init__(method_name)
 
     async def test_run(self):
-        await Tortoise.init(db_url="sqlite://../../.cache/db.sqlite",
-                            modules={"models": ["core.models", "review.models"]})
-        await Tortoise.generate_schemas()
-        await reviewer.run()
+        await reviewer.run(db_url="sqlite://../../.cache/db.sqlite")
 
 
 if __name__ == '__main__':

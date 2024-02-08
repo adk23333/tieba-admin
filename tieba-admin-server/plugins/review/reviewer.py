@@ -2,10 +2,12 @@ import asyncio
 from enum import Enum
 from typing import Tuple, Callable, Dict, Literal, List, Union, Coroutine, Any
 
-from aiotieba import Client
+from aiotieba import Client, PostSortType
 from aiotieba.typing import Threads, Thread, Posts, Post, Comment
+from tortoise import Tortoise
 
 from core.models import ForumUserPermission, Permission, User, Config
+from core.plugin import Plugin
 from . import execute
 from .models import Forum as RForum
 from .models import Function as RFunction
@@ -30,7 +32,7 @@ class Level(Enum):
         return self.value.add(other)
 
 
-class Reviewer:
+class Reviewer(Plugin):
     def __init__(self):
         self.check_map: CheckMap = {'comment': [], 'post': [], 'thread': []}
         self.clients: Dict[Client, List[str]] = {}
@@ -158,26 +160,18 @@ class Reviewer:
 
     async def check_posts(self, client: Client, tid: int):
         posts: List[Tuple[Post, bool]] = []
-        count = 1
-        total = 1
-        while count <= total:
-            origin_posts: Posts = await client.get_posts(tid, count)
-            for post in origin_posts:
-                if post.floor == 1:
-                    total = origin_posts.page.total_page
-                    continue
-                prev_post = await RPost.filter(pid=post.pid).get_or_none()
-                if prev_post:
-                    if post.reply_num < prev_post.reply_num:
-                        await RPost.filter(pid=post.pid).update(reply_num=post.reply_num)
-                    elif post.reply_num > prev_post.reply_num:
-                        posts.append((post, True))
-                        await RPost.filter(pid=post.pid).update(reply_num=post.reply_num)
-                else:
-                    posts.append((post, False))
-                    await RPost.create(pid=post.pid, tid=tid, reply_num=post.reply_num)
-
-            count += 1
+        last_posts: Posts = await client.get_posts(tid, sort=PostSortType.DESC)
+        for post in last_posts:
+            prev_post = await RPost.filter(pid=post.pid).get_or_none()
+            if prev_post:
+                if post.reply_num < prev_post.reply_num:
+                    await RPost.filter(pid=post.pid).update(reply_num=post.reply_num)
+                elif post.reply_num > prev_post.reply_num:
+                    posts.append((post, True))
+                    await RPost.filter(pid=post.pid).update(reply_num=post.reply_num)
+            else:
+                posts.append((post, False))
+                await RPost.create(pid=post.pid, tid=tid, reply_num=post.reply_num)
 
         need_check_comment: List[Post] = []
         for post, checked in posts:
@@ -232,7 +226,11 @@ class Reviewer:
             if rst.enable:
                 await self.check_threads(client, fname)
 
-    async def run(self):
+    async def run(self, **kwargs):
+        await Tortoise.init(db_url=kwargs["db_url"],
+                            modules={"models": ["core.models", "review.models"]})
+        await Tortoise.generate_schemas()
+
         temp = await self.init_config()
         user_with_fname: List[Tuple[User, str]] = [(await t.user.get(), t.fname) for t in temp]
         for i in user_with_fname:
