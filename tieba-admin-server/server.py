@@ -125,7 +125,7 @@ for plugin_name, plugin in plugins.items():
 
 @app.before_server_start
 async def init_server(_app):
-    if await Config.get_bool(key="first"):
+    if (await Config.get_bool(key="first")) is None:
         await Config.set_config(key="first", v1=True)
 
 
