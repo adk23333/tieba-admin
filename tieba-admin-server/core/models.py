@@ -31,10 +31,12 @@ class Config(Model):
         table = "configs"
 
     @staticmethod
-    async def get_bool(key: str) -> bool:
+    async def get_bool(key: str) -> Optional[bool]:
         rst = await Config.filter(key=key).get_or_none()
         if rst:
             return rst.v1 == str(True)
+        else:
+            return None
 
     @staticmethod
     async def get_list(key: str) -> Optional[bool]:

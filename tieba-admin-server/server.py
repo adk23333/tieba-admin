@@ -1,9 +1,12 @@
 import base64
 import logging
+import os
+import signal
+from asyncio import sleep
 
 import aiotieba
 from sanic import Sanic, Request, response
-from sanic.log import LOGGING_CONFIG_DEFAULTS
+from sanic.log import LOGGING_CONFIG_DEFAULTS, logger, Colors
 from sanic_ext import Extend
 from sanic_jwt import Initialize, Configuration, Responses, exceptions
 from sanic_jwt.exceptions import AuthenticationFailed
@@ -11,7 +14,7 @@ from tortoise.contrib.sanic import register_tortoise
 
 from core.exception import ArgException, err_rps
 from core.models import User, Config, password_hasher, Permission, ForumUserPermission
-from core.utils import validate_password
+from core.utils import validate_password, get_modules, json
 
 current_level = logging.getLevelName(logging.getLogger().getEffectiveLevel())
 LOGGING_CONFIG = LOGGING_CONFIG_DEFAULTS
@@ -105,7 +108,8 @@ class JwtResponse(Responses):
 
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
-register_tortoise(app, db_url="sqlite://.cache/db.sqlite",
+app.ctx.DB_URL = "sqlite://.cache/db.sqlite"
+register_tortoise(app, db_url=app.ctx.DB_URL,
                   modules={'models': ['core.models']},
                   generate_schemas=True)
 Initialize(app, authenticate=authenticate,
@@ -113,10 +117,15 @@ Initialize(app, authenticate=authenticate,
            configuration_class=JwtConfig,
            responses_class=JwtResponse)
 
+plugins = get_modules("./plugins")
+for plugin_name, plugin in plugins.items():
+    app.blueprint(plugin.bp)
+    logger.debug(f"{Colors.GREEN}[{plugin.__name__}]{Colors.END} Import.")
+
 
 @app.before_server_start
 async def init_server(_app):
-    if not await Config.get_bool(key="first"):
+    if await Config.get_bool(key="first"):
         await Config.set_config(key="first", v1=True)
 
 
@@ -161,14 +170,33 @@ async def first_login_api(rqt: Request):
         return err_rps(err)
 
 
-@app.get("/api/reviewer/switch")
-async def reviewer_switch(request):
-    ...
+@app.get("/api/plugins")
+async def get_plugins(rqt: Request):
+    return json(data=rqt.app.ctx.plugins)
 
 
-@app.get("/api/reviewer/info")
-async def reviewer_query(request):
-    ...
+@app.post("/api/plugins/status")
+async def plugins_status(rqt: Request):
+    status = rqt.form.get("status")
+    _plugin = rqt.form.get("plugin")
+    if _plugin not in plugins.keys():
+        return json("插件不存在")
+    plugin_work = rqt.app.m.workers.get(f"Sanic-{_plugin}-0", None)
+    if status == "1" and plugin_work:
+        return json("插件已在运行")
+    elif status == "1" and not plugin_work:
+        rqt.app.m.manage(_plugin, plugins[_plugin].plugin.run, {"db_url": rqt.app.ctx.DB_URL})
+        await sleep(1)
+        plugin_work: dict = rqt.app.m.workers.get(f"Sanic-{_plugin}-0")
+        plugin_work.pop("start_at")
+        return json(data=plugin_work)
+    elif status == "0" and plugin_work:
+        os.kill(plugin_work["pid"], signal.SIGTERM)
+        return json("已停止插件")
+    elif status == "0" and not plugin_work:
+        return json("插件未运行")
+    else:
+        return json("参数错误")
 
 
 @app.get("/api/reviewer/keyword")
