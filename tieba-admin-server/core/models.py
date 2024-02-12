@@ -49,6 +49,7 @@ class Config(Model):
         rst = await Config.filter(key=key).get_or_none()
         if not rst:
             rst = Config(key=key, v1=str(v1))
+        rst.v1 = str(v1)
         await rst.save()
 
 
