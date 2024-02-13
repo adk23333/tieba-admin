@@ -6,6 +6,7 @@ from aiotieba import Client
 from aiotieba.typing import Comment as Tb_Comment
 from aiotieba.typing import Post as Tb_Post
 from aiotieba.typing import Thread as Tb_Thread
+from sanic.log import logger
 
 
 class OptionType(Enum):
@@ -43,24 +44,30 @@ class Executor(object):
     opt_day: int = 0
 
     async def run(self):
+        rst = True
         match self.user_opt:
             case OptionType.Empty:
                 pass
             case User.Block:
-                await self.client.block(self.obj.fid, self.obj.user.portrait, day=self.user_day)
+                rst = await self.client.block(self.obj.fid, self.obj.user.portrait, day=self.user_day)
             case User.Black:
-                await self.client.add_bawu_blacklist(self.obj.fname, self.obj.user.portrait)
+                rst = await self.client.add_bawu_blacklist(self.obj.fname, self.obj.user.portrait)
+        if not rst:
+            logger.warning(rst.err.__str__())
+        rst = True
         match self.option:
             case OptionType.Empty:
                 pass
             case Thread.Hide:
-                await self.client.hide_thread(self.obj.fid, self.obj.tid)
+                rst = await self.client.hide_thread(self.obj.fid, self.obj.tid)
             case Thread.Delete:
-                await self.client.del_thread(self.obj.fid, self.obj.tid)
+                rst = await self.client.del_thread(self.obj.fid, self.obj.tid)
             case Post.Delete:
-                print(await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid))
+                rst = await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
             case Comment.Delete:
-                await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
+                rst = await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
+        if not rst:
+            logger.warning(rst.err.__str__())
 
     def exec_compare(self, exec2):
         if exec2.user_opt.value > self.user_opt.value:
