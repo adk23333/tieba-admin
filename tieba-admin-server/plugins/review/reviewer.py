@@ -55,7 +55,7 @@ class Reviewer(Plugin):
         for fname in fnames:
             for name in self.check_name_map:
                 if name not in old_name_map:
-                    func_list.append(RFunction(function=name, fname=fname))
+                    func_list.append(RFunction(function=name, fname_id=fname))
         await RFunction.bulk_create(func_list)
 
         return temp
