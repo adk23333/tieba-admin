@@ -53,10 +53,9 @@ class Reviewer(Plugin):
         old_name_map: List[str] = [i.function for i in (await RFunction.all())]
         func_list = []
         for fname in fnames:
-            forum = await RForum.get_or_create(fname=fname)
             for name in self.check_name_map:
                 if name not in old_name_map:
-                    func_list.append(RFunction(function=name, fname=forum))
+                    func_list.append(RFunction(function=name, fname=fname))
         await RFunction.bulk_create(func_list)
 
         return temp
