@@ -1,6 +1,6 @@
-import logging
 import os
 import signal
+import sys
 from asyncio import sleep
 
 import aiotieba
@@ -15,32 +15,34 @@ from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse
 from core.models import User, Config, password_hasher, Permission, ForumUserPermission
 from core.utils import validate_password, get_modules, json
 
-current_level = logging.getLevelName(logging.getLogger().getEffectiveLevel())
+aiotieba.logging.set_logger(logger)
+LOG_FILE_PATH = "./log/server.log"
 LOGGING_CONFIG = LOGGING_CONFIG_DEFAULTS
-if current_level == "DEBUG":
-    LOGGING_CONFIG.update({
-        "handlers": {
-            "console": {
-                "class": "logging.FileHandler",
-                "formatter": "generic",
-                "filename": "./log/server.log",
-                'encoding': "utf-8"
-            },
-            "error_console": {
-                "class": "logging.FileHandler",
-                "formatter": "generic",
-                "filename": "./log/server.log",
-                'encoding': "utf-8",
-            },
-            "access_console": {
-                "class": "logging.FileHandler",
-                "formatter": "access",
-                "filename": "./log/server.log",
-                'encoding': "utf-8",
-            },
+LOGGING_CONFIG.update({
+    "handlers": {
+        "console": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "generic",
+            "filename": LOG_FILE_PATH,
+            'encoding': "utf-8",
+            'maxBytes': 1024 * 1024 * 1,
+            'backupCount': 10,
         },
-
-    })
+        "error_console": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "generic",
+            "filename": LOG_FILE_PATH,
+            'encoding': "utf-8",
+            'maxBytes': 1024 * 1024 * 1,
+            'backupCount': 10,
+        },
+        "access_console": {
+            "class": "logging.StreamHandler",
+            "formatter": "access",
+            "stream": sys.stdout,
+        },
+    },
+})
 
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
@@ -125,7 +127,11 @@ async def plugins_status(rqt: Request):
     if status == "1" and plugin_work:
         return json("插件已在运行")
     elif status == "1" and not plugin_work:
-        rqt.app.m.manage(_plugin, plugins[_plugin].plugin.run, {"db_url": rqt.app.ctx.DB_URL})
+        rqt.app.m.manage(_plugin, plugins[_plugin].plugin.run,
+                         {
+                             "db_url": rqt.app.ctx.DB_URL,
+                             "log_level": logger.level,
+                         })
         await sleep(1)
         plugin_work: dict = rqt.app.m.workers.get(f"Sanic-{_plugin}-0")
         plugin_work.pop("start_at")

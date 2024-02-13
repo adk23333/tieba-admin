@@ -4,8 +4,9 @@ from asyncio import sleep
 from enum import Enum
 from typing import Tuple, Callable, Dict, Literal, List, Union, Coroutine, Any
 
-from aiotieba import Client, PostSortType
+from aiotieba import Client, PostSortType, logging
 from aiotieba.typing import Threads, Thread, Posts, Post, Comment
+from sanic.log import logger
 from tortoise import Tortoise
 
 from core.models import ForumUserPermission, Permission, User, Config
@@ -42,6 +43,7 @@ class Reviewer(Plugin):
         self.check_name_map = set()
 
     async def init_config(self):
+        logging.set_logger(logger)
         self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
         if self.no_exec is None:
             await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
@@ -221,9 +223,10 @@ class Reviewer(Plugin):
             if not self.no_exec:
                 await executor.run()
 
-    async def run_with_client(self, client: Client, min_time=10, max_time=20):
+    async def run_with_client(self, client: Client, min_time=10.0, max_time=20.0):
         while True:
             for fname in self.clients[client]:
+                logger.debug(f"[Reviewer] review {fname}")
                 rst = await RForum.get(fname=fname)
                 if rst.enable:
                     await self.check_threads(client, fname)
@@ -248,6 +251,8 @@ class Reviewer(Plugin):
 
     def run(self, **kwargs):
         try:
+            logger.setLevel(kwargs["log_level"])
+            logger.info("[Reviewer] running.")
             asyncio.run(self.async_run(db_url=kwargs["db_url"]))
         except KeyboardInterrupt:
             pass
