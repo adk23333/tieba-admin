@@ -112,7 +112,7 @@ async def first_login_api(rqt: Request):
 
 @app.get("/api/plugins")
 async def get_plugins(rqt: Request):
-    return json(data=rqt.app.ctx.plugins)
+    return json(data=list(plugins.keys()))
 
 
 @app.post("/api/plugins/status")
