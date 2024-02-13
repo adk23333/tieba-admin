@@ -5,14 +5,17 @@ from aiotieba import Client
 from aiotieba.typing import Thread, Post, Comment
 
 from .execute import empty, delete
-from .reviewer import Reviewer
+from .models import Keyword
+from .reviewer import Reviewer, Level
 
 reviewer = Reviewer()
 
 
 @reviewer.route(['thread', 'post', 'comment'])
 async def check_keyword(t: Union[Thread, Post, Comment], client: Client):
-    print(t.text)
-    if re.search(r"测试\+3", t.text):
-        return delete(client, t)
+    if t.user.level in Level.LOW.value:
+        keywords = await Keyword.all()
+        for kw in keywords:
+            if re.search(kw.keyword, t.text):
+                return delete(client, t)
     return empty()
