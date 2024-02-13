@@ -8,7 +8,7 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         super().__init__(method_name)
 
     async def test_run(self):
-        await reviewer.run(db_url="sqlite://../../.cache/db.sqlite")
+        await reviewer.async_run(review_models="review.models", db_url="sqlite://../../.cache/db.sqlite")
 
 
 if __name__ == '__main__':

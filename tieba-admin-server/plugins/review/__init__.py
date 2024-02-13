@@ -1,1 +1,2 @@
-from .checker import reviewer
+from .buleprint import bp
+from .checker import reviewer as plugin

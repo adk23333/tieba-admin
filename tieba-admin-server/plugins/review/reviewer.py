@@ -1,4 +1,6 @@
 import asyncio
+import random
+from asyncio import sleep
 from enum import Enum
 from typing import Tuple, Callable, Dict, Literal, List, Union, Coroutine, Any
 
@@ -220,15 +222,17 @@ class Reviewer(Plugin):
             if not self.no_exec:
                 await executor.run()
 
-    async def run_with_client(self, client: Client):
-        for fname in self.clients[client]:
-            rst = await RForum.get(fname=fname)
-            if rst.enable:
-                await self.check_threads(client, fname)
+    async def run_with_client(self, client: Client, min_time=10, max_time=20):
+        while True:
+            for fname in self.clients[client]:
+                rst = await RForum.get(fname=fname)
+                if rst.enable:
+                    await self.check_threads(client, fname)
+                await sleep(random.uniform(min_time, max_time))
 
-    async def run(self, **kwargs):
+    async def async_run(self, review_models="plugins.review.models", **kwargs):
         await Tortoise.init(db_url=kwargs["db_url"],
-                            modules={"models": ["core.models", "review.models"]})
+                            modules={"models": ["core.models", review_models]})
         await Tortoise.generate_schemas()
 
         temp = await self.init_config()
@@ -242,3 +246,9 @@ class Reviewer(Plugin):
                 self.clients[client].append(i[1])
 
         await asyncio.gather(*[self.run_with_client(client) for client in self.clients])
+
+    def run(self, **kwargs):
+        try:
+            asyncio.run(self.async_run(db_url=kwargs["db_url"]))
+        except KeyboardInterrupt:
+            pass

@@ -1,0 +1,3 @@
+class Plugin(object):
+    def run(self, **kwargs):
+        ...

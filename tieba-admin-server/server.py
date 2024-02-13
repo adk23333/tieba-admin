@@ -109,18 +109,24 @@ class JwtResponse(Responses):
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
 app.ctx.DB_URL = "sqlite://.cache/db.sqlite"
-register_tortoise(app, db_url=app.ctx.DB_URL,
-                  modules={'models': ['core.models']},
-                  generate_schemas=True)
 Initialize(app, authenticate=authenticate,
            retrieve_user=retrieve_user,
            configuration_class=JwtConfig,
            responses_class=JwtResponse)
 
+models = ['core.models']
 plugins = get_modules("./plugins")
 for plugin_name, plugin in plugins.items():
     app.blueprint(plugin.bp)
+    try:
+        models.append(plugin.models.__name__)
+    except AttributeError:
+        pass
     logger.debug(f"{Colors.GREEN}[{plugin.__name__}]{Colors.END} Import.")
+
+register_tortoise(app, db_url=app.ctx.DB_URL,
+                  modules={'models': models},
+                  generate_schemas=True)
 
 
 @app.before_server_start

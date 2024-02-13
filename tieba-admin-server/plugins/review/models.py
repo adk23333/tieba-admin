@@ -35,6 +35,12 @@ class Forum(Model):
     class Meta:
         table = "review_forum"
 
+    def to_json(self):
+        return {
+            "fname": self.fname,
+            "enable": self.enable,
+        }
+
 
 class Function(Model):
     function = fields.CharField(max_length=64, pk=True)
@@ -45,3 +51,17 @@ class Function(Model):
 
     class Meta:
         table = "review_function"
+
+    async def to_json(self):
+        return {
+            "function": self.function,
+            "fname": (await self.fname.get()).fname,
+            "enable": self.enable,
+        }
+
+
+class Keyword(Model):
+    keyword = fields.CharField(max_length=64, pk=True)
+
+    class Meta:
+        table = "review_keyword"

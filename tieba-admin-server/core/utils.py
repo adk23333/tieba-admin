@@ -1,3 +1,5 @@
+import importlib
+import os
 import re
 
 from sanic import Request
@@ -6,7 +8,7 @@ from sanic.response import json as sanic_json, HTTPResponse
 from core.exception import ArgException
 
 
-def json(message: str, data, status_code: int = 200) -> HTTPResponse:
+def json(message: str = "success", data=None, status_code: int = 200) -> HTTPResponse:
     """
     A preformatted Sanic json response.
 
@@ -35,3 +37,13 @@ def validate_password(password: str) -> str:
 
 def get_ip(request: Request) -> str:
     return request.remote_addr or request.ip
+
+
+def get_modules(path):
+    module_names = [d for d in os.listdir(path) if
+                    os.path.isdir(os.path.join(path, d)) and not d.startswith('.') and not d.startswith('__')]
+    modules = {}
+    for module_name in module_names:
+        module = importlib.import_module(f"plugins.{module_name}")
+        modules[module_name] = module
+    return modules
