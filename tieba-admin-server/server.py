@@ -60,9 +60,7 @@ for plugin_name, plugin in plugins.items():
         pass
     logger.debug(f"{Colors.GREEN}[{plugin.__name__}]{Colors.END} Import.")
 
-register_tortoise(app, db_url=app.ctx.DB_URL,
-                  modules={'models': models},
-                  generate_schemas=True)
+register_tortoise(app, db_url=app.ctx.DB_URL, modules={'models': models}, generate_schemas=True)
 
 
 @app.before_server_start
