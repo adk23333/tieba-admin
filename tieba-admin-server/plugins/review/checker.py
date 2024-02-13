@@ -24,7 +24,7 @@ async def check_keyword(t: Union[Thread, Post, Comment], client: Client):
 
 @reviewer.route(['thread', 'post', 'comment'])
 async def check_black(t: Union[Thread, Post, Comment], client: Client):
-    user = await ForumUserPermission.filter(user=t.user.user_id, permission=Permission.Black.value).get_or_none()
+    user = await ForumUserPermission.filter(user_id=t.user.user_id, permission=Permission.Black.value).get_or_none()
     if user:
         return block(client, t, 10)
     return empty()
