@@ -9,7 +9,15 @@ from .models import Keyword, Forum, Function
 bp = Blueprint("review")
 
 
-@bp.post("/api/reviewer/no_exec")
+@bp.get("/api/review/info")
+async def info(rqt: Request):
+    return json(data={
+        "name": "内容审查",
+        "desc": "开启这个插件后，将根据设定的关键词或者图片审查指定贴吧的帖子内容"
+    })
+
+
+@bp.post("/api/review/no_exec")
 async def no_exec(rqt: Request):
     _no_exec = rqt.form.get("bool")
     if _no_exec:
