@@ -12,6 +12,7 @@ bp = Blueprint("review")
 @bp.get("/api/review/info")
 async def info(rqt: Request):
     return json(data={
+        "plugin": "review",
         "name": "内容审查",
         "desc": "开启这个插件后，将根据设定的关键词或者图片审查指定贴吧的帖子内容"
     })
