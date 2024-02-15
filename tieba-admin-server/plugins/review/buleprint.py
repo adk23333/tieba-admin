@@ -1,9 +1,9 @@
 from typing import List, Dict
 
-from sanic import Blueprint, Request
-
 from core.models import Config
 from core.utils import json
+from sanic import Blueprint, Request
+
 from .models import Keyword, Forum, Function
 
 bp = Blueprint("review")
@@ -39,24 +39,16 @@ async def keyword(rqt: Request):
 
 @bp.post("/api/reviewer/forum")
 async def forum(rqt: Request):
-    try:
-        _forums: List[Dict] = rqt.json
-        if _forums:
-            for f in _forums:
-                _f = await Forum.filter(fname=f["fname"]).get_or_none()
-                if _f:
-                    _f.enable = f["enable"]
-                    await _f.save()
-                else:
-                    await Forum.create(fname=f["fname"], enable=f["enable"])
-    except (KeyError, AttributeError, TypeError):
-        pass
-    finally:
-        forums = []
-        for f in await Forum.all():
-            forums.append(f.to_json())
+    _forums: Dict = rqt.json
+    if _forums:
+        _f = await Forum.filter(fname=_forums["fname"]).get_or_none()
+        if _f:
+            _f.enable = _forums["enable"]
+            await _f.save()
+        else:
+            await Forum.create(fname=_forums["fname"], enable=_forums["enable"])
 
-        return json(data=forums)
+    return json(data=[f.to_json() for f in await Forum.all()])
 
 
 @bp.post("/api/reviewer/function")
