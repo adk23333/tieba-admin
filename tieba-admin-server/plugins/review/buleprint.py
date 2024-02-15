@@ -36,7 +36,7 @@ async def no_exec(rqt: Request):
 
 @bp.post("/api/review/keyword")
 async def keyword(rqt: Request):
-    keywords = rqt.form.getlist("list")
+    keywords = rqt.json
     if not keywords:
         keywords = await Keyword.all()
         return json(data=[k.keyword for k in keywords])
