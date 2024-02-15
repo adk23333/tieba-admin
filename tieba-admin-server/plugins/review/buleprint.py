@@ -50,26 +50,30 @@ async def keyword(rqt: Request):
 @bp.post("/api/review/forum")
 async def forum(rqt: Request):
     _forums: Dict = rqt.json
+    msg = None
     if _forums:
         _f = await Forum.filter(fname=_forums["fname"]).get_or_none()
         if _f:
             _f.enable = _forums["enable"]
             await _f.save()
+            msg = f"修改{_forums['fname']}吧状态成功"
         else:
-            await Forum.create(fname=_forums["fname"], enable=_forums["enable"])
+            return json(f"没有{_forums['fname']}吧的记录")
 
-    return json(data=[f.to_json() for f in await Forum.all()])
+    return json(msg, [f.to_json() for f in await Forum.all()])
 
 
 @bp.post("/api/review/function")
 async def function(rqt: Request):
     _func: Dict = rqt.json
+    msg = None
     if _func:
         _f = await Function.filter(fname=_func["fname"], function=_func["function"]).get_or_none()
         if _f:
             _f.enable = _func["enable"]
             await _f.save()
+            msg = f"修改{_func['fname']}吧{_func['function']}方法状态成功"
         else:
-            await Function.create(function=_func["function"], fname=_func["fname"], enable=_func["enable"])
+            return json(f"{_func['function']}不存在")
 
-    return json(data=[await f.to_json() for f in await Function.all()])
+    return json(msg, [await f.to_json() for f in await Function.all()])

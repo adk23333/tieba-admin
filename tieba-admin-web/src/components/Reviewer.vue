@@ -86,7 +86,7 @@ const onEdit = () => {
   if (isEditing.value) {
     keyword_api(keywords.value).then((res) => {
       keywords.value = res.data.data
-      message.success(res.data.msg)
+      message.success("保存成功")
     })
   }
   isEditing.value = !isEditing.value
