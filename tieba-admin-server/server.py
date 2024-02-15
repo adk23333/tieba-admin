@@ -122,10 +122,10 @@ async def plugins_status(rqt: Request):
     status = rqt.form.get("status")
     _plugin = rqt.form.get("plugin")
     if _plugin not in plugins.keys():
-        return json("插件不存在")
+        return json("插件不存在", {"status": False})
     plugin_work = rqt.app.m.workers.get(f"Sanic-{_plugin}-0", None)
     if status == "1" and plugin_work:
-        return json("插件已在运行")
+        return json("插件已在运行", {"status": True})
     elif status == "1" and not plugin_work:
         rqt.app.m.manage(_plugin, plugins[_plugin].plugin.run,
                          {
@@ -135,12 +135,15 @@ async def plugins_status(rqt: Request):
         await sleep(1)
         plugin_work: dict = rqt.app.m.workers.get(f"Sanic-{_plugin}-0")
         plugin_work.pop("start_at")
-        return json(data=plugin_work)
+        plugin_work["status"] = True
+        return json("已启动插件", plugin_work)
     elif status == "0" and plugin_work:
         os.kill(plugin_work["pid"], signal.SIGTERM)
-        return json("已停止插件")
+        return json("已停止插件", {"status": False})
     elif status == "0" and not plugin_work:
-        return json("插件未运行")
+        return json("插件未运行", {"status": False})
+    elif status is None:
+        return json("插件状态", {"status": bool(plugin_work)})
     else:
         return json("参数错误")
 
