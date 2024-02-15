@@ -72,4 +72,4 @@ async def function(rqt: Request):
         else:
             await Function.create(function=_func["function"], fname=_func["fname"], enable=_func["enable"])
 
-    return json(data=[f.to_json() for f in await Function.all()])
+    return json(data=[await f.to_json() for f in await Function.all()])
