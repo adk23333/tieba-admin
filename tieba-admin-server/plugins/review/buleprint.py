@@ -32,7 +32,7 @@ async def no_exec(rqt: Request):
     return json(data={"REVIEW_NO_EXEC": _no_exec})
 
 
-@bp.post("/api/reviewer/keyword")
+@bp.post("/api/review/keyword")
 async def keyword(rqt: Request):
     keywords = rqt.form.getlist("list")
     if not keywords:
@@ -45,7 +45,7 @@ async def keyword(rqt: Request):
     return json(data=[k.keyword for k in keywords])
 
 
-@bp.post("/api/reviewer/forum")
+@bp.post("/api/review/forum")
 async def forum(rqt: Request):
     _forums: Dict = rqt.json
     if _forums:
@@ -59,7 +59,7 @@ async def forum(rqt: Request):
     return json(data=[f.to_json() for f in await Forum.all()])
 
 
-@bp.post("/api/reviewer/function")
+@bp.post("/api/review/function")
 async def function(rqt: Request):
     try:
         _func: List[Dict] = rqt.json
