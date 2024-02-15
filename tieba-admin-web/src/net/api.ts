@@ -44,3 +44,21 @@ export const plugin_status = (status: boolean | null = null, plugin: string | nu
     }
   )
 }
+
+export const plugin_info = (plugin: string) => {
+  return serviceAxios.get(
+    `/${plugin}/info`,
+  )
+}
+
+export const forum_status = (fname: string | null = null, enable: boolean | null = null) => {
+  return serviceAxios.post(
+    "/review/forum",
+    {
+      "fname": fname,
+      "enable": enable
+    }
+  )
+}
+
+

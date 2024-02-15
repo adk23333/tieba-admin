@@ -82,13 +82,11 @@ declare module 'vue-router/auto' {
   export type RouteParamsRaw<Name extends keyof RouteNamedMap> = RouteNamedMap[Name]['paramsRaw']
 
   export function useRouter(): RouterTyped
-
   export function useRoute<Name extends keyof RouteNamedMap = keyof RouteNamedMap>(name?: Name): RouteLocationNormalizedLoadedTypedList<RouteNamedMap>[Name]
 
   export const useLink: UseLinkFnTyped<RouteNamedMap>
 
   export function onBeforeRouteLeave(guard: NavigationGuard<RouteNamedMap>): void
-
   export function onBeforeRouteUpdate(guard: NavigationGuard<RouteNamedMap>): void
 
   export const RouterLink: RouterLinkTyped<RouteNamedMap>

@@ -7,50 +7,19 @@
       max-width="240"
       rounded="lg"
       hover
-      v-if="plugins.includes('review')">
-      <v-card-title>内容审查</v-card-title>
+      v-for="plugin in plugins.values()">
+      <v-card-title>{{ plugin.name }}</v-card-title>
       <v-card-text>
-        开启这个插件后，将根据设定的关键词或者图片审查指定贴吧的帖子内容
+        {{ plugin.desc }}
       </v-card-text>
       <v-divider class="mx-3"/>
       <v-card-actions>
         <v-btn color="#660092">设置
-          <ReviewerVue/>
+          <component :is="getSettingComponent(plugin.plugin)"/>
         </v-btn>
         <v-spacer/>
         <v-switch
-          v-model="plugins_status[0]"
-          class="mr-n16 mb-n5"
-          color="green"></v-switch>
-      </v-card-actions>
-    </v-card>
-
-
-    <v-card
-      class="ma-3"
-      max-width="240"
-      rounded="lg"
-      hover
-      v-if="plugins.includes('manager')">
-      <v-card-title>权限管理</v-card-title>
-      <v-card-text>
-        开启这个插件后，将分配管理员百度账号在指定贴吧的权限给设定的账号
-      </v-card-text>
-      <v-divider class="mx-3"/>
-      <v-card-actions>
-        <v-btn color="#660092">设置
-
-          <v-dialog v-model="dialog[1]" activator="parent" width="auto">
-            <v-card>
-              <v-card-text>
-                test
-              </v-card-text>
-            </v-card>
-          </v-dialog>
-        </v-btn>
-        <v-spacer/>
-        <v-switch
-          v-model="plugins_status[1]"
+          @update:modelValue="onSwitch(plugin.plugin)"
           class="mr-n16 mb-n5"
           color="green"></v-switch>
       </v-card-actions>
@@ -58,42 +27,62 @@
   </v-sheet>
 </template>
 <script lang="ts" setup>
-import {onMounted, ref, watch} from 'vue';
-import ReviewerVue from '@/components/Reviewer.vue';
+import {defineAsyncComponent, onMounted, ref} from 'vue';
 import {useAppStore} from "@/store/app";
-import {get_plugins, plugin_status} from "@/net/api";
+import {get_plugins, plugin_info, plugin_status} from "@/net/api";
 import {message} from "@/plugins/toast";
+
+interface Plugin {
+  status: boolean | null
+  plugin: string
+  name: string
+  desc: string
+}
 
 const store = useAppStore()
 store.set_title('功能管理')
-const key_words = "a,b,c,d"
-const dialog = ref([false, false])
-const plugins = ref<string[]>([])
-const plugins_status = ref<boolean[]>([])
+const plugins = ref<Map<string, Plugin>>(new Map())
 
+const onSwitch = (name: string) => {
+  let plugin = plugins.value.get(name) as Plugin
+  plugin_status(!plugin.status, plugin.plugin).then((res) => {
+    plugin.status = res.data.data.status
+    plugins.value.set(plugin.plugin, plugin)
+    message.success(res.data.msg)
+  })
+}
 
-watch(() => [...plugins_status.value], (nv, ov) => {
-  if (ov.length != 0) {
-    nv.forEach((obj, index) => {
-      if (obj != ov[index]) {
-        plugin_status(obj, plugins.value[index]).then((res) => {
-          plugins_status.value[index] = res.data.data.status
-          message.success(res.data.msg)
-        })
-      }
-    })
+const getSettingComponent = (plugin: string) => {
+  let imp: Promise<any>
+  switch (plugin) {
+    case "review": {
+      imp = import('@/components/Reviewer.vue')
+      break
+    }
+    default:
+      return null
   }
-
-})
+  return defineAsyncComponent(() => {
+    return imp
+  })
+}
 
 onMounted(() => {
   get_plugins().then((res) => {
-    plugins.value = res.data.data
+    res.data.data.forEach((plugin_name: string, index: number) => {
+      plugin_info(plugin_name).then((res) => {
+        plugins.value.set(res.data.data.plugin, res.data.data)
 
-    plugins.value.forEach((obj, index) => {
-      plugin_status(null, obj).then((res) => {
-        plugins_status.value[index] = res.data.data.status
+        plugin_status(null, plugin_name).then((res) => {
+
+          let plugin = plugins.value.get(plugin_name)
+          if (plugin != undefined) {
+            plugin.status = res.data.data.status
+            plugins.value.set(plugin_name, plugin)
+          }
+        })
       })
+
     })
   })
 })

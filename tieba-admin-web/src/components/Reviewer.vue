@@ -22,8 +22,8 @@
         </v-combobox>
       </v-card-text>
 
-      <v-card-text>
-        变嫁吧
+      <v-card-text v-for="forum in forums">
+        {{ forum["fname"] }}吧
         <v-switch class="mr-n16 mb-n6" color="green"></v-switch>
         <v-sheet>
           <v-row class="ml-3" dense>
@@ -43,11 +43,24 @@
 </template>
 
 <script lang="ts" setup>
-import {ref} from 'vue';
+import {onMounted, ref} from 'vue';
+import {forum_status} from "@/net/api";
+
+interface Forum {
+  fname: string
+  enable: boolean
+}
 
 const isEditing = ref(false)
 const dialog = ref(false)
 const keywords = ref([])
+const forums = ref<Forum[]>([])
+
+onMounted(() => {
+  forum_status().then((res) => {
+    forums.value = res.data.data
+  })
+})
 </script>
 
 <style></style>

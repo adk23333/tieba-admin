@@ -96,8 +96,6 @@ function submit() {
   }).finally(() => {
     loading.value = false
   })
-
-
 }
 
 </script>
