@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import Dict
 
 from core.models import Config
 from core.utils import json
@@ -63,21 +63,13 @@ async def forum(rqt: Request):
 
 @bp.post("/api/review/function")
 async def function(rqt: Request):
-    try:
-        _func: List[Dict] = rqt.json
-        if _func:
-            for f in _func:
-                _f = await Function.filter(fname=f["fname"], function=f["function"]).get_or_none()
-                if _f:
-                    _f.enable = f["enable"]
-                    await _f.save()
-                else:
-                    await Function.create(function=f["function"], fname=f["fname"], enable=f["enable"])
-    except (KeyError, AttributeError, TypeError):
-        pass
-    finally:
-        forums = []
-        for f in await Function.all():
-            forums.append(await f.to_json())
+    _func: Dict = rqt.json
+    if _func:
+        _f = await Function.filter(fname=_func["fname"], function=_func["function"]).get_or_none()
+        if _f:
+            _f.enable = _func["enable"]
+            await _f.save()
+        else:
+            await Function.create(function=_func["function"], fname=_func["fname"], enable=_func["enable"])
 
-        return json(data=forums)
+    return json(data=[f.to_json() for f in await Function.all()])
