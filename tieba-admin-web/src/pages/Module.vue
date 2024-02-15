@@ -20,6 +20,7 @@
         <v-spacer/>
         <v-switch
           @update:modelValue="onSwitch(plugin.plugin)"
+          v-model="plugin.status"
           class="mr-n16 mb-n5"
           color="green"></v-switch>
       </v-card-actions>
@@ -27,7 +28,7 @@
   </v-sheet>
 </template>
 <script lang="ts" setup>
-import {defineAsyncComponent, onMounted, ref} from 'vue';
+import {defineAsyncComponent, onMounted, reactive} from 'vue';
 import {useAppStore} from "@/store/app";
 import {get_plugins, plugin_info, plugin_status} from "@/net/api";
 import {message} from "@/plugins/toast";
@@ -41,13 +42,13 @@ interface Plugin {
 
 const store = useAppStore()
 store.set_title('功能管理')
-const plugins = ref<Map<string, Plugin>>(new Map())
+const plugins = reactive<Map<string, Plugin>>(new Map())
 
 const onSwitch = (name: string) => {
-  let plugin = plugins.value.get(name) as Plugin
+  let plugin = plugins.get(name) as Plugin
   plugin_status(!plugin.status, plugin.plugin).then((res) => {
     plugin.status = res.data.data.status
-    plugins.value.set(plugin.plugin, plugin)
+    plugins.set(plugin.plugin, plugin)
     message.success(res.data.msg)
   })
 }
@@ -71,14 +72,14 @@ onMounted(() => {
   get_plugins().then((res) => {
     res.data.data.forEach((plugin_name: string, index: number) => {
       plugin_info(plugin_name).then((res) => {
-        plugins.value.set(res.data.data.plugin, res.data.data)
+        plugins.set(res.data.data.plugin, res.data.data)
 
         plugin_status(null, plugin_name).then((res) => {
 
-          let plugin = plugins.value.get(plugin_name)
+          let plugin = plugins.get(plugin_name)
           if (plugin != undefined) {
             plugin.status = res.data.data.status
-            plugins.value.set(plugin_name, plugin)
+            plugins.set(plugin_name, plugin)
           }
         })
       })

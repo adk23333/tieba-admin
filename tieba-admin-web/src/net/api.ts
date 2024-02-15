@@ -30,11 +30,18 @@ export const get_plugins = () => {
 }
 
 export const plugin_status = (status: boolean | null = null, plugin: string | null = null) => {
-  let _status = 1
-  if (status) {
-    _status = 1
-  } else {
-    _status = 0
+  let _status
+  switch (status) {
+    case true: {
+      _status = 1
+      break
+    }
+    case false: {
+      _status = 0
+      break
+    }
+    default:
+      _status = null
   }
   return serviceAxios.postForm(
     "/plugins/status",
@@ -52,13 +59,59 @@ export const plugin_info = (plugin: string) => {
 }
 
 export const forum_status = (fname: string | null = null, enable: boolean | null = null) => {
-  return serviceAxios.post(
-    "/review/forum",
-    {
+  let data
+  if (!(fname == null || enable == null)) {
+    data = JSON.stringify({
       "fname": fname,
       "enable": enable
+    })
+  }
+  return serviceAxios.post(
+    "/review/forum",
+    data
+  )
+}
+
+export const no_exec_api = (value: boolean | null = null) => {
+  let _status
+  switch (value) {
+    case true: {
+      _status = 1
+      break
+    }
+    case false: {
+      _status = 0
+      break
+    }
+    default:
+      _status = null
+  }
+  return serviceAxios.postForm(
+    "/review/no_exec",
+    {
+      "bool": _status
     }
   )
 }
 
+export const keyword_api = (keyword: string[] | null = null) => {
+  return serviceAxios.post(
+    "/review/keyword",
+    JSON.stringify(keyword),
+  )
+}
 
+export const func_status = (func: string | null = null, fname: string | null = null, enable: boolean | null = null) => {
+  let data
+  if (!(func == null || fname == null || enable == null)) {
+    data = JSON.stringify({
+      "function": func,
+      "fname": fname,
+      "enable": enable
+    })
+  }
+  return serviceAxios.post(
+    "/review/function",
+    data
+  )
+}
