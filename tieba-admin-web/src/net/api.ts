@@ -29,7 +29,7 @@ export const get_plugins = () => {
   })
 }
 
-export const plugin_status = (status: boolean | null = null, plugin: string | null = null) => {
+export const set_plugin_status = (status: boolean | null = null, plugin: string | null = null) => {
   let _status
   switch (status) {
     case true: {
@@ -52,13 +52,21 @@ export const plugin_status = (status: boolean | null = null, plugin: string | nu
   )
 }
 
+
+export const get_plugin_status = (plugin: string | null = null) => {
+  return serviceAxios.get(
+    "/plugins/status?plugin=" + plugin,
+  )
+}
+
+
 export const plugin_info = (plugin: string) => {
   return serviceAxios.get(
     `/${plugin}/info`,
   )
 }
 
-export const forum_status = (fname: string | null = null, enable: boolean | null = null) => {
+export const set_forum_status = (fname: string | null = null, enable: boolean | null = null) => {
   let data
   if (!(fname == null || enable == null)) {
     data = JSON.stringify({
@@ -72,7 +80,11 @@ export const forum_status = (fname: string | null = null, enable: boolean | null
   )
 }
 
-export const no_exec_api = (value: boolean | null = null) => {
+export const get_forum_status = () => {
+  return serviceAxios.get("/review/forum")
+}
+
+export const set_no_exec = (value: boolean | null = null) => {
   let _status
   switch (value) {
     case true: {
@@ -94,14 +106,22 @@ export const no_exec_api = (value: boolean | null = null) => {
   )
 }
 
-export const keyword_api = (keyword: string[] | null = null) => {
+export const get_no_exec = () => {
+  return serviceAxios.get("/review/no_exec")
+}
+
+export const set_keyword = (keyword: string[] | null = null) => {
   return serviceAxios.post(
     "/review/keyword",
     JSON.stringify(keyword),
   )
 }
 
-export const func_status = (func: string | null = null, fname: string | null = null, enable: boolean | null = null) => {
+export const get_keyword = () => {
+  return serviceAxios.get("/review/keyword")
+}
+
+export const set_func_status = (func: string | null = null, fname: string | null = null, enable: boolean | null = null) => {
   let data
   if (!(func == null || fname == null || enable == null)) {
     data = JSON.stringify({
@@ -114,4 +134,8 @@ export const func_status = (func: string | null = null, fname: string | null = n
     "/review/function",
     data
   )
+}
+
+export const get_func_status = () => {
+  return serviceAxios.get("/review/function")
 }

@@ -61,7 +61,16 @@
 
 <script lang="ts" setup>
 import {onMounted, ref} from 'vue';
-import {forum_status, func_status, keyword_api, no_exec_api} from "@/net/api";
+import {
+  get_forum_status,
+  get_func_status,
+  get_keyword,
+  get_no_exec,
+  set_forum_status,
+  set_func_status,
+  set_keyword,
+  set_no_exec
+} from "@/net/api";
 import {message} from "@/plugins/toast";
 
 interface Forum {
@@ -84,7 +93,7 @@ const funcs = ref<Function[]>([])
 
 const onEdit = () => {
   if (isEditing.value) {
-    keyword_api(keywords.value).then((res) => {
+    set_keyword(keywords.value).then((res) => {
       keywords.value = res.data.data
       message.success("保存成功")
     })
@@ -93,37 +102,37 @@ const onEdit = () => {
 }
 
 const onExecSwitch = () => {
-  no_exec_api(no_exec.value).then((res) => {
+  set_no_exec(no_exec.value).then((res) => {
     no_exec.value = res.data.data.REVIEW_NO_EXEC
     message.success(res.data.msg)
   })
 }
 
 const onForumSwitch = (forum: Forum) => {
-  forum_status(forum.fname, !forum.enable).then((res) => {
+  set_forum_status(forum.fname, !forum.enable).then((res) => {
     forums.value = res.data.data
     message.success(res.data.msg)
   })
 }
 
 const onFuncSwitch = (func: Function) => {
-  func_status(func.function, func.fname, !func.enable).then((res) => {
+  set_func_status(func.function, func.fname, !func.enable).then((res) => {
     funcs.value = res.data.data
     message.success(res.data.msg)
   })
 }
 
 onMounted(() => {
-  forum_status().then((res) => {
+  get_forum_status().then((res) => {
     forums.value = res.data.data
   })
-  no_exec_api().then((res) => {
+  get_no_exec().then((res) => {
     no_exec.value = res.data.data.REVIEW_NO_EXEC
   })
-  keyword_api().then((res) => {
+  get_keyword().then((res) => {
     keywords.value = res.data.data
   })
-  func_status().then((res) => {
+  get_func_status().then((res) => {
     funcs.value = res.data.data
   })
 })

@@ -5,7 +5,7 @@ import re
 from sanic import Request
 from sanic.response import json as sanic_json, HTTPResponse
 
-from core.exception import ArgException
+from .exception import ArgException
 
 
 def json(message: str = "success", data=None, status_code: int = 200) -> HTTPResponse:

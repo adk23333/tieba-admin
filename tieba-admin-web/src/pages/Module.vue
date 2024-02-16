@@ -30,7 +30,7 @@
 <script lang="ts" setup>
 import {defineAsyncComponent, onMounted, reactive} from 'vue';
 import {useAppStore} from "@/store/app";
-import {get_plugins, plugin_info, plugin_status} from "@/net/api";
+import {get_plugin_status, get_plugins, plugin_info, set_plugin_status} from "@/net/api";
 import {message} from "@/plugins/toast";
 
 interface Plugin {
@@ -46,7 +46,7 @@ const plugins = reactive<Map<string, Plugin>>(new Map())
 
 const onSwitch = (name: string) => {
   let plugin = plugins.get(name) as Plugin
-  plugin_status(!plugin.status, plugin.plugin).then((res) => {
+  set_plugin_status(!plugin.status, plugin.plugin).then((res) => {
     plugin.status = res.data.data.status
     plugins.set(plugin.plugin, plugin)
     message.success(res.data.msg)
@@ -73,9 +73,7 @@ onMounted(() => {
     res.data.data.forEach((plugin_name: string, index: number) => {
       plugin_info(plugin_name).then((res) => {
         plugins.set(res.data.data.plugin, res.data.data)
-
-        plugin_status(null, plugin_name).then((res) => {
-
+        get_plugin_status(plugin_name).then((res) => {
           let plugin = plugins.get(plugin_name)
           if (plugin != undefined) {
             plugin.status = res.data.data.status

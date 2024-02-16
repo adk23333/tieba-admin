@@ -37,6 +37,7 @@ serviceAxios.interceptors.response.use(
   },
   (err) => {
     let msg = "";
+    let store = useAppStore()
     if (err && err.response) {
       switch (err.response.status) {
         case 302:
@@ -51,7 +52,6 @@ serviceAxios.interceptors.response.use(
         case 403:
           msg = "您没有权限操作！"
           if (err.response.data.is_first == true) {
-            const store = useAppStore()
             store.set_title('初始化配置')
             router.push('/first_login')
             return Promise.reject(false)

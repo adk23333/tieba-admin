@@ -6,10 +6,12 @@ from asyncio import sleep
 import aiotieba
 from sanic import Sanic, Request, response
 from sanic.log import LOGGING_CONFIG_DEFAULTS, logger, Colors
+from sanic.views import HTTPMethodView
 from sanic_ext import Extend
 from sanic_jwt import Initialize
 from tortoise.contrib.sanic import register_tortoise
 
+from core import level_protected
 from core.exception import ArgException, err_rps
 from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse
 from core.models import User, Config, password_hasher, Permission, ForumUserPermission
@@ -113,39 +115,52 @@ async def first_login_api(rqt: Request):
 
 
 @app.get("/api/plugins")
+@level_protected(Permission.MinAdmin)
 async def get_plugins(rqt: Request):
     return json(data=list(plugins.keys()))
 
 
-@app.post("/api/plugins/status")
-async def plugins_status(rqt: Request):
-    status = rqt.form.get("status")
-    _plugin = rqt.form.get("plugin")
-    if _plugin not in plugins.keys():
-        return json("插件不存在", {"status": False})
-    plugin_work = rqt.app.m.workers.get(f"Sanic-{_plugin}-0", None)
-    if status == "1" and plugin_work:
-        return json("插件已在运行", {"status": True})
-    elif status == "1" and not plugin_work:
-        rqt.app.m.manage(_plugin, plugins[_plugin].plugin.run,
-                         {
-                             "db_url": rqt.app.ctx.DB_URL,
-                             "log_level": logger.level,
-                         })
-        await sleep(1)
+class PluginsStatus(HTTPMethodView):
+    @level_protected(Permission.MinAdmin)
+    async def get(self, rqt: Request):
+        _plugin = rqt.args.get("plugin")
+        if _plugin not in plugins.keys():
+            return json("插件不存在", {"status": False})
         plugin_work: dict = rqt.app.m.workers.get(f"Sanic-{_plugin}-0")
-        plugin_work.pop("start_at")
-        plugin_work["status"] = True
-        return json("已启动插件", plugin_work)
-    elif status == "0" and plugin_work:
-        os.kill(plugin_work["pid"], signal.SIGTERM)
-        return json("已停止插件", {"status": False})
-    elif status == "0" and not plugin_work:
-        return json("插件未运行", {"status": False})
-    elif status is None:
         return json("插件状态", {"status": bool(plugin_work)})
-    else:
-        return json("参数错误")
+
+    @level_protected(Permission.HighAdmin)
+    async def post(self, rqt: Request):
+        status = rqt.form.get("status")
+        _plugin = rqt.form.get("plugin")
+        if _plugin not in plugins.keys():
+            return json("插件不存在", {"status": False})
+        plugin_work = rqt.app.m.workers.get(f"Sanic-{_plugin}-0", None)
+        if status == "1" and plugin_work:
+            return json("插件已在运行", {"status": True})
+        elif status == "1" and not plugin_work:
+            rqt.app.m.manage(_plugin, plugins[_plugin].plugin.run,
+                             {
+                                 "db_url": rqt.app.ctx.DB_URL,
+                                 "log_level": logger.level,
+                             })
+            await sleep(1)
+            plugin_work: dict = rqt.app.m.workers.get(f"Sanic-{_plugin}-0")
+            plugin_work.pop("start_at")
+            plugin_work["status"] = True
+            return json("已启动插件", plugin_work)
+        elif status == "0" and plugin_work:
+            os.kill(plugin_work["pid"], signal.SIGTERM)
+            return json("已停止插件", {"status": False})
+        elif status == "0" and not plugin_work:
+            return json("插件未运行", {"status": False})
+        elif status is None:
+            return json("插件状态", {"status": bool(plugin_work)})
+        else:
+            return json("参数错误")
+
+
+app.add_route(PluginsStatus.as_view(), "/api/plugins/status")
 
 
 @app.get("/api/reviewer/keyword")
