@@ -86,7 +86,17 @@ def empty():
     return Executor()
 
 
-def hide(client: Client, thread: Thread, day: int = 1):
+def hide(client: Client, thread: Tb_Thread, day: int = 1):
+    """
+    返回屏蔽主题贴的操作
+    Args:
+        client: 传入了执行账号的贴吧客户端
+        thread: 待处理主题贴
+        day:
+
+    Returns:
+
+    """
     return Executor(
         client,
         thread,
