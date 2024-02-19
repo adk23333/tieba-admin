@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import Enum
+from enum import IntEnum
 from typing import Union, Literal
 
 from aiotieba import Client
@@ -9,16 +9,16 @@ from aiotieba.typing import Thread as Tb_Thread
 from sanic.log import logger
 
 
-class OptionType(Enum):
+class OptionType(IntEnum):
     Empty = 0  # 无操作
 
 
-class User(Enum):
+class User(IntEnum):
     Block = 1  # 封禁
     Black = 2  # 拉黑
 
 
-class Thread(Enum):
+class Thread(IntEnum):
     """
     对主题贴操作
     """
@@ -26,14 +26,14 @@ class Thread(Enum):
     Delete = 4  # 删除
 
 
-class Post(Enum):
+class Post(IntEnum):
     """
     对楼层操作
     """
     Delete = 5  # 删除
 
 
-class Comment(Enum):
+class Comment(IntEnum):
     """
     对楼中楼操作
     """
@@ -107,13 +107,13 @@ class Executor(object):
 
         """
 
-        if exec2.user_opt.value > self.user_opt.value:
+        if exec2.user_opt > self.user_opt:
             self.user_opt = exec2.user_opt
             self.user_day = exec2.user_day
         elif exec2.user_opt == self.user_opt and exec2.user_day > self.user_day:
             self.user_day = exec2.user_day
 
-        if exec2.option.value > self.option.value:
+        if exec2.option > self.option:
             self.option = exec2.option
         elif exec2.option == self.option and exec2.opt_day > self.opt_day:
             self.opt_day = exec2.opt_day
