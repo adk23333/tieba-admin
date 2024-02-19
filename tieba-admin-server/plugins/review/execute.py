@@ -10,25 +10,34 @@ from sanic.log import logger
 
 
 class OptionType(Enum):
-    Empty = 0
+    Empty = 0  # 无操作
 
 
 class User(Enum):
-    Block = 1
-    Black = 2
+    Block = 1  # 封禁
+    Black = 2  # 拉黑
 
 
 class Thread(Enum):
-    Hide = 3
-    Delete = 4
+    """
+    对主题贴操作
+    """
+    Hide = 3  # 隐藏
+    Delete = 4  # 删除
 
 
 class Post(Enum):
-    Delete = 5
+    """
+    对楼层操作
+    """
+    Delete = 5  # 删除
 
 
 class Comment(Enum):
-    Delete = 6
+    """
+    对楼中楼操作
+    """
+    Delete = 6  # 删除
 
 
 UnitOptionType = Union[OptionType, Thread, Post, Comment]
@@ -36,6 +45,18 @@ UnitOptionType = Union[OptionType, Thread, Post, Comment]
 
 @dataclass
 class Executor(object):
+    """操作容器类
+
+    所有操作都应该使用此类包装后统一处理.
+
+    Args:
+        client: 传入了执行账号的贴吧客户端.
+        obj: 待处理的贴子.
+        user_opt: 对待处理贴子的发送者的处理.
+        option: 对贴子的处理.
+        user_day: 对发送者的操作持续时间.
+        opt_day: 对贴子的操作持续时间.
+    """
     client: Client = None
     obj: Union[Tb_Thread, Tb_Post, Tb_Comment, None] = None
     user_opt: Union[User, OptionType] = OptionType.Empty
@@ -44,6 +65,12 @@ class Executor(object):
     opt_day: int = 0
 
     async def run(self):
+        """
+        执行操作
+        Returns:
+            None
+
+        """
         rst = True
         match self.user_opt:
             case OptionType.Empty:
@@ -70,6 +97,16 @@ class Executor(object):
             logger.warning(rst.err.__str__())
 
     def exec_compare(self, exec2):
+        """
+        与exec2比较处罚严重程度，返回包含更严重操作的新操作类
+        Args:
+            exec2 (Executor): 待比较操作类
+
+        Returns:
+            Executor
+
+        """
+
         if exec2.user_opt.value > self.user_opt.value:
             self.user_opt = exec2.user_opt
             self.user_day = exec2.user_day
@@ -83,6 +120,11 @@ class Executor(object):
 
 
 def empty():
+    """
+    返回空操作
+    Returns:
+        Executor
+    """
     return Executor()
 
 
@@ -92,10 +134,10 @@ def hide(client: Client, thread: Tb_Thread, day: int = 1):
     Args:
         client: 传入了执行账号的贴吧客户端
         thread: 待处理主题贴
-        day:
+        day: 屏蔽持续时间（单位：天）
 
     Returns:
-
+        Executor
     """
     return Executor(
         client,
@@ -106,6 +148,16 @@ def hide(client: Client, thread: Tb_Thread, day: int = 1):
 
 
 def delete(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Literal[-1, 0, 1, 3, 10] = 0):
+    """
+    返回删除主题贴的操作
+    Args:
+        client: 传入了执行账号的贴吧客户端
+        obj: 待处理的主题贴/楼/楼中楼
+        day: 对发送者的封禁持续时间（单位：天）-1是永封
+
+    Returns:
+        Executor
+    """
     if isinstance(obj, Tb_Thread):
         option = Thread.Delete
     elif isinstance(obj, Tb_Post):
@@ -136,6 +188,16 @@ def delete(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Lite
 
 
 def block(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Literal[1, 3, 10] = 1):
+    """
+    返回封禁操作
+    Args:
+        client: 传入了执行账号的贴吧客户端
+        obj: 待处理的主题贴/楼/楼中楼
+        day: 封禁时间（单位：天）
+
+    Returns:
+        Executor
+    """
     return Executor(
         client,
         obj,
@@ -145,6 +207,15 @@ def block(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Liter
 
 
 def black(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment]):
+    """
+    返回加入黑名单操作
+    Args:
+        client: 传入了执行账号的贴吧客户端
+        obj: 待处理的主题贴/楼/楼中楼
+
+    Returns:
+        Executor
+    """
     return Executor(
         client,
         obj,
