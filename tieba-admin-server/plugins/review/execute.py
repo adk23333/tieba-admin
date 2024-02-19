@@ -54,7 +54,7 @@ class Executor(object):
 
     所有操作都应该使用此类包装后统一处理.
 
-    Args:
+    Attributes:
         client: 传入了执行账号的贴吧客户端.
         obj: 待处理的贴子.
         user_opt: 对待处理贴子的发送者的处理.

@@ -82,6 +82,10 @@ async def first_login_check(rqt: Request):
 
 @app.post('/api/first_login')
 async def first_login_api(rqt: Request):
+    """第一次登录接口
+
+    用于第一次登录时填入初始化设置信息
+    """
     try:
         is_first = await Config.get_bool(key="first")
         if not is_first or is_first is not None:
@@ -117,12 +121,18 @@ async def first_login_api(rqt: Request):
 @app.get("/api/plugins")
 @level_protected(Permission.MinAdmin)
 async def get_plugins(rqt: Request):
+    """获取所有插件的名字
+
+    """
     return json(data=list(plugins.keys()))
 
 
 class PluginsStatus(HTTPMethodView):
     @level_protected(Permission.MinAdmin)
     async def get(self, rqt: Request):
+        """获取插件状态
+
+        """
         _plugin = rqt.args.get("plugin")
         if _plugin not in plugins.keys():
             return json("插件不存在", {"status": False})
@@ -131,6 +141,9 @@ class PluginsStatus(HTTPMethodView):
 
     @level_protected(Permission.HighAdmin)
     async def post(self, rqt: Request):
+        """设置插件状态
+
+        """
         status = rqt.form.get("status")
         _plugin = rqt.form.get("plugin")
         if _plugin not in plugins.keys():
@@ -161,26 +174,6 @@ class PluginsStatus(HTTPMethodView):
 
 
 app.add_route(PluginsStatus.as_view(), "/api/plugins/status")
-
-
-@app.get("/api/reviewer/keyword")
-async def keyword_query(request):
-    ...
-
-
-@app.get("/api/reviewer/keyword/update", version=1)
-async def keyword_update(request):
-    ...
-
-
-@app.get("/api/handler/switch", version=1)
-async def handler_switch(request):
-    ...
-
-
-@app.get("/api/handler/info", version=1)
-async def handle_query(request):
-    ...
 
 
 # @app.get('/')

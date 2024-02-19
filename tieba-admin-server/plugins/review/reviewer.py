@@ -23,6 +23,18 @@ CheckMap = Dict[Literal['post', 'comment', 'thread'], List[Check]]
 
 
 class Level(Enum):
+    """
+    方便划分等级的魔法数字枚举
+    
+    Attributes:
+        ALL: {1-18}
+        LOW : {1-3}
+        MIDDLE : {4-9}
+        HIGH : {10-18}
+        LOW1 : {1-6}
+        MIDDLE2 : {7-12}
+        HIGH2 : {13-18}
+    """
     ALL = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}
     LOW = {1, 2, 3}
     MIDDLE = {4, 5, 6, 7, 8, 9}
@@ -32,10 +44,17 @@ class Level(Enum):
     HIGH2 = {13, 14, 15, 16, 17, 18}
 
     def __add__(self, other):
+        """
+        使这个类支持使用+符号合并
+        """
         return self.value.add(other)
 
 
 class Reviewer(Plugin):
+    """
+    继承自Plugin基类
+    """
+
     def __init__(self):
         self.check_map: CheckMap = {'comment': [], 'post': [], 'thread': []}
         self.clients: Dict[Client, List[str]] = {}
@@ -43,6 +62,9 @@ class Reviewer(Plugin):
         self.check_name_map = set()
 
     async def init_config(self):
+        """
+        主要从数据库加载配置
+        """
         logging.set_logger(logger)
         self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
         if self.no_exec is None:
@@ -63,10 +85,19 @@ class Reviewer(Plugin):
         return temp
 
     def __del__(self):
+        """
+        善后
+        """
         for client in self.clients.keys():
             client.__aexit__()
 
     def comment(self, description: str = None):
+        """
+        加载处理楼中楼的checker
+        Args:
+            description: 已废除的参数
+        """
+
         def wrapper(func: CheckFunc):
             self.check_name_map.add(func.__name__)
             self.check_map['comment'].append({
@@ -80,6 +111,12 @@ class Reviewer(Plugin):
         return wrapper
 
     def post(self, description: str = None):
+        """
+        加载处理楼层的checker
+        Args:
+            description: 已废除的参数
+        """
+
         def wrapper(func: CheckFunc):
             self.check_name_map.add(func.__name__)
             self.check_map['post'].append({
@@ -93,6 +130,12 @@ class Reviewer(Plugin):
         return wrapper
 
     def thread(self, description: str = None):
+        """
+        加载处理主题贴的checker
+        Args:
+            description: 已废除的参数
+        """
+
         def wrapper(func: CheckFunc):
             self.check_name_map.add(func.__name__)
             self.check_map['thread'].append({
@@ -108,6 +151,13 @@ class Reviewer(Plugin):
     def route(self,
               _type: List[Literal['thread', 'post', 'comment']],
               description: str = None):
+        """
+        加载处理楼中楼/楼层/主题贴的checker
+        Args:
+            _type: 处理类型
+            description: 已废除的参数
+        """
+
         def wrapper(func: CheckFunc):
             self.check_name_map.add(func.__name__)
             for __type in _type:
@@ -124,6 +174,13 @@ class Reviewer(Plugin):
         return wrapper
 
     async def check_threads(self, client: Client, fname: str):
+        """
+        检查主题贴的内容
+        Args:
+            client: 传入了执行账号的贴吧客户端
+            fname: 贴吧名
+
+        """
         threads: List[Tuple[Thread, bool]] = []
         origin_threads: Threads = await client.get_threads(fname)
 
@@ -162,6 +219,12 @@ class Reviewer(Plugin):
             await self.check_posts(client, thread.tid)
 
     async def check_posts(self, client: Client, tid: int):
+        """
+        检查楼层内容
+        Args:
+            client: 传入了执行账号的贴吧客户端
+            tid: 所在主题贴id
+        """
         posts: List[Tuple[Post, bool]] = []
         last_posts: Posts = await client.get_posts(tid, sort=PostSortType.DESC)
         for post in last_posts:
@@ -199,6 +262,13 @@ class Reviewer(Plugin):
             await self.check_comment(client, post.pid, post.tid)
 
     async def check_comment(self, client: Client, pid: int, tid: int):
+        """
+        检查楼中楼内容
+        Args:
+            client: 传入了执行账号的贴吧客户端
+            pid: 楼层id
+            tid: 主题贴id
+        """
         comments: List[Comment] = []
         count = 1
         while origin_comments := await client.get_comments(tid, pid, pn=count):
@@ -224,6 +294,13 @@ class Reviewer(Plugin):
                 await executor.run()
 
     async def run_with_client(self, client: Client, min_time=10.0, max_time=20.0):
+        """
+        实现持续监控的关键函数
+        Args:
+            client: 传入了执行账号的贴吧客户端
+            min_time: 最短间隔时间（单位：秒）
+            max_time: 最大间隔时间（单位：秒）
+        """
         while True:
             for fname in self.clients[client]:
                 logger.debug(f"[Reviewer] review {fname}")
@@ -233,6 +310,12 @@ class Reviewer(Plugin):
                 await sleep(random.uniform(min_time, max_time))
 
     async def async_run(self, review_models="plugins.review.models", **kwargs):
+        """
+        初始化数据库连接以及加载需要用到的客户端配置
+        Args:
+            review_models:
+            **kwargs: 将从中提取db_url
+        """
         await Tortoise.init(db_url=kwargs["db_url"],
                             modules={"models": ["core.models", review_models]})
         await Tortoise.generate_schemas()
@@ -250,6 +333,11 @@ class Reviewer(Plugin):
         await asyncio.gather(*[self.run_with_client(client) for client in self.clients])
 
     def run(self, **kwargs):
+        """
+        用此函数启动执行程序
+        Args:
+            **kwargs: 从中提取db_url
+        """
         try:
             logger.setLevel(kwargs["log_level"])
             logger.info("[Reviewer] running.")
