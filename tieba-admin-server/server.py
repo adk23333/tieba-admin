@@ -1,11 +1,13 @@
+import logging
 import os
 import signal
 import sys
 from asyncio import sleep
 
 import aiotieba
+from environs import Env
 from sanic import Sanic, Request, response
-from sanic.log import LOGGING_CONFIG_DEFAULTS, logger, Colors
+from sanic.log import LOGGING_CONFIG_DEFAULTS, logger
 from sanic.views import HTTPMethodView
 from sanic_ext import Extend
 from sanic_jwt import Initialize
@@ -17,7 +19,6 @@ from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse
 from core.models import User, Config, password_hasher, Permission, ForumUserPermission
 from core.utils import validate_password, get_modules, json
 
-aiotieba.logging.set_logger(logger)
 LOG_FILE_PATH = "./log/server.log"
 LOGGING_CONFIG = LOGGING_CONFIG_DEFAULTS
 LOGGING_CONFIG.update({
@@ -48,13 +49,20 @@ LOGGING_CONFIG.update({
 
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
+app.ctx.env = Env()
 app.ctx.DB_URL = "sqlite://.cache/db.sqlite"
+models = ['core.models']
+
+if app.ctx.env.bool("DEV", False):
+    logger.setLevel(logging.DEBUG)
+aiotieba.logging.set_logger(logger)
+
+register_tortoise(app, db_url=app.ctx.DB_URL, modules={'models': models}, generate_schemas=True)
 Initialize(app, authenticate=authenticate,
            retrieve_user=retrieve_user,
            configuration_class=JwtConfig,
            responses_class=JwtResponse)
 
-models = ['core.models']
 plugins = get_modules("./plugins")
 for plugin_name, plugin in plugins.items():
     app.blueprint(plugin.bp)
@@ -62,9 +70,6 @@ for plugin_name, plugin in plugins.items():
         models.append(plugin.models.__name__)
     except AttributeError:
         pass
-    logger.debug(f"{Colors.GREEN}[{plugin.__name__}]{Colors.END} Import.")
-
-register_tortoise(app, db_url=app.ctx.DB_URL, modules={'models': models}, generate_schemas=True)
 
 
 @app.before_server_start
@@ -175,31 +180,12 @@ class PluginsStatus(HTTPMethodView):
 
 app.add_route(PluginsStatus.as_view(), "/api/plugins/status")
 
-
-# @app.get('/')
-# async def home(request):
-#     return await response.file("./page/index.html")
-#
-#
-# @app.get('/favicon.ico')
-# async def favicon(request):
-#     return await response.file('./page/logo.webp')
-#
-#
-# @app.get('/assets/<file>')
-# async def assets(request, file):
-#     if file in app.ctx.assets:
-#         mime = None
-#         if splitext(file)[-1] == '.js':
-#             mime = 'text/javascript'
-#         return await response.file(f"./page/assets/{file}", mime_type=mime)
-#     else:
-#         return se_json("该页面不存在", {}, 404)
-
+if app.ctx.env.bool("WEB", True):
+    app.static("/", "./page/", index="index.html")
 
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=3100,
-        dev=True,
+        dev=app.ctx.env.bool("DEV", False),
     )

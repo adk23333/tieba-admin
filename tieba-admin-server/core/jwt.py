@@ -3,6 +3,7 @@ from copy import deepcopy
 from functools import wraps
 from inspect import isawaitable
 
+import environs
 from sanic import Request, response, Blueprint, redirect
 from sanic.views import HTTPMethodView
 from sanic_jwt import Configuration, Responses, exceptions, utils
@@ -46,8 +47,8 @@ async def retrieve_user(rqt: Request, payload):
 class JwtConfig(Configuration):
     url_prefix = "/api/auth"
     path_to_retrieve_user = "/self"
-    secret = "asdfghjkl"
     expiration_delta = 60 * 60
+    secret = environs.Env().str("SECRET", "This is a big secret!!!")
     # cookie_set = True
     # cookie_access_token_name = "token"
     user_id = "uid"

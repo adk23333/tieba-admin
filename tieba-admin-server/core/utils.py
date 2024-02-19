@@ -1,6 +1,8 @@
 import importlib
 import os
+import random
 import re
+import string
 
 from sanic import Request
 from sanic.response import json as sanic_json, HTTPResponse
@@ -56,3 +58,7 @@ def get_modules(path):
         module = importlib.import_module(f"plugins.{module_name}")
         modules[module_name] = module
     return modules
+
+
+def generate_random_string(length):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
