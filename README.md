@@ -10,9 +10,9 @@
 
 ---
 
-## 开始使用
+## :+1:开始使用
 
-**⭐直接运行⭐**
+**:star:直接运行:star:**
 
 clone本仓库
 然后到tieba-admin-server目录下
@@ -28,6 +28,6 @@ sanic server:app --host=0.0.0.0 --port=3000 --workers=2
 
 然后打开http://localhost:3000/
 
-**⭐docker⭐**
+**:star:docker:star:**
 
 
