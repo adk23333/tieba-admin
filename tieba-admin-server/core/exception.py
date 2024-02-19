@@ -11,4 +11,9 @@ class ArgException(SanicException):
 
 
 def err_rps(e: Optional[SanicException] = None):
+    """
+    快速返回发生错误时的response
+    Args:
+        e: 发生的错误
+    """
     return response.json({"status": e.status_code, "msg": e.message}, e.status_code)

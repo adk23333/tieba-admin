@@ -14,6 +14,18 @@ password_hasher = PasswordHasher()
 
 @unique
 class Permission(IntEnum):
+    """
+    权限枚举
+    
+    Attributes:
+        Master : 5
+        SuperAdmin : 4
+        HighAdmin : 3
+        MinAdmin : 2
+        Creator : 1
+        Ordinary : 0
+        Black : -10000
+    """
     Master = 5
     SuperAdmin = 4
     HighAdmin = 3
@@ -24,6 +36,9 @@ class Permission(IntEnum):
 
 
 class Config(Model):
+    """
+    存储简单的配置的表
+    """
     key = fields.CharField(max_length=32)
     v1 = fields.CharField(max_length=256)
 
@@ -54,6 +69,17 @@ class Config(Model):
 
 
 class User(Model):
+    """
+    存储账号信息
+    Attributes:
+        uid : 贴吧用户id
+        tuid : 贴吧用户的uid
+        username : 贴吧用户username
+        password : 登录本站的密码
+        BDUSS :
+        STOKEN : 
+        master : 归属该账户管辖
+    """
     uid = fields.BigIntField(pk=True)
     tuid = fields.BigIntField(null=True, default=None)
     username = fields.CharField(max_length=64)
@@ -95,6 +121,15 @@ class User(Model):
 
 
 class ForumUserPermission(Model):
+    """
+    记录需要管理的贴吧以及其对应管理账户及权限的表
+
+    Attributes:
+        fid: 贴吧id
+        fname: 贴吧名字
+        user: 管理该吧的账号
+        permission: 权限
+    """
     fid = fields.IntField()
     fname = fields.CharField(max_length=128)
     user = fields.ForeignKeyField("models.User")

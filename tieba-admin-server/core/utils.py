@@ -40,6 +40,15 @@ def get_ip(request: Request) -> str:
 
 
 def get_modules(path):
+    """
+    获取插件模块
+    Args:
+        path: 获取的目录
+
+    Returns:
+        Dict[module_name_str, ModuleType]
+
+    """
     module_names = [d for d in os.listdir(path) if
                     os.path.isdir(os.path.join(path, d)) and not d.startswith('.') and not d.startswith('__')]
     modules = {}
