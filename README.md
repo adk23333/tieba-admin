@@ -10,24 +10,50 @@
 
 ---
 
-## :+1:开始使用
+## ✨开始使用
 
-**:star:直接运行:star:**
+- **:star:直接运行**
 
-clone本仓库
-然后到tieba-admin-server目录下
-```shell
-cd tieba-admin-server
-```
+  clone本仓库
 
-执行以下命令
+  ```shell
+  git clone https://github.com/adk23333/tieba-admin.git
+  ```
 
-```shell
-sanic server:app --host=0.0.0.0 --port=3000 --workers=2
-```
+  然后到tieba-admin-server目录下
 
-然后打开http://localhost:3000/
+  ```shell
+  cd tieba-admin-server
+  ```
+  
+  安装依赖
+  ```shell
+  pip install -r requirements.txt
+  ```
 
-**:star:docker:star:**
+  执行以下命令启动服务
 
+  ```shell
+  sanic server:app --host=0.0.0.0 --port=3000 --workers=1
+  ```
+
+  然后打开http://localhost:3000/
+
+
+
+- **:star:docker**
+
+  待完成
+
+## ✨配置
+
+可配置的环境变量有如下这些
+
+| 名称    | 作用                  | 默认值                  |
+| ------- | --------------------- | ----------------------- |
+| DEV     | 是否使用开发模式      | false                   |
+| SECRET  | JWT加密密钥           | This is a big secret!!! |
+| HOST    | 监听网址              | 0.0.0.0                 |
+| PORT    | 监听端口              | 3000                    |
+| WORKERS | 提供API的工作进程数量 | 1                       |
 
