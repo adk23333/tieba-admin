@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import IntEnum, unique
 from typing import Union, Literal
 
 from aiotieba import Client
@@ -9,15 +9,18 @@ from aiotieba.typing import Thread as Tb_Thread
 from sanic.log import logger
 
 
+@unique
 class OptionType(IntEnum):
     Empty = 0  # 无操作
 
 
+@unique
 class User(IntEnum):
     Block = 1  # 封禁
     Black = 2  # 拉黑
 
 
+@unique
 class Thread(IntEnum):
     """
     对主题贴操作
@@ -26,6 +29,7 @@ class Thread(IntEnum):
     Delete = 4  # 删除
 
 
+@unique
 class Post(IntEnum):
     """
     对楼层操作
@@ -33,6 +37,7 @@ class Post(IntEnum):
     Delete = 5  # 删除
 
 
+@unique
 class Comment(IntEnum):
     """
     对楼中楼操作
