@@ -5,7 +5,7 @@ import sys
 from asyncio import sleep
 
 import aiotieba
-from environs import Env
+from environs import Env, load_dotenv
 from sanic import Sanic, Request, response
 from sanic.log import LOGGING_CONFIG_DEFAULTS, logger
 from sanic.views import HTTPMethodView
@@ -50,6 +50,7 @@ LOGGING_CONFIG.update({
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
 app.ctx.env = Env()
+load_dotenv()
 app.ctx.DB_URL = "sqlite://.cache/db.sqlite"
 models = ['core.models']
 
