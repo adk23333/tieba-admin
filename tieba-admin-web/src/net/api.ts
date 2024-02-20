@@ -22,6 +22,12 @@ export const register_top_admin = (data: object) => {
   });
 };
 
+export const get_portrait = () => {
+  return serviceAxios.get(
+    "/self/portrait"
+  )
+}
+
 export const get_plugins = () => {
   return serviceAxios({
     url: "/plugins",

@@ -40,20 +40,27 @@
 }
 </style>
 <script lang="ts" setup>
-import {ref} from "vue";
+import {onMounted, ref} from "vue";
 import {useAppStore} from "@/store/app";
 import {storeToRefs} from "pinia";
+import {get_portrait} from "@/net/api";
 
 const store = useAppStore()
-const select_info = [
-  ["profile", "概览", "https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/tb.1.9f5a63a2.w1s__jfQF2ejxoCf1OCcmw?t=1533450011"],
+
+const select_info = ref([
+  ["profile", "概览", ""],
   ["modules", "功能管理", "mdi-pencil"],
   ["logcat", "操作日志", "mdi-history"],
   ["manager", "成员管理", "mdi-account-cog"],
-]
+])
 const drawer = ref(true)
 const {user} = storeToRefs(store)
 const {title} = storeToRefs(store)
 
+onMounted(() => {
+  get_portrait().then((res) => {
+    select_info.value[0][2] = "https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/" + res.data.data
+  })
+})
 
 </script>

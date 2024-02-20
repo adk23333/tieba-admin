@@ -2,7 +2,8 @@
 import {defineStore} from 'pinia'
 
 interface User {
-  uid: string
+  uid: number
+  tuid: number
   username: string
   permission: string
 }
@@ -12,7 +13,8 @@ export const useAppStore = defineStore('app', {
     title: '概览',
     user: {
       token: '',
-      uid: '',
+      uid: 0,
+      tuid: 0,
       username: '',
       permission: '',
     }
@@ -30,6 +32,7 @@ export const useAppStore = defineStore('app', {
     },
     set_user(object: User) {
       this.user.uid = object.uid
+      this.user.tuid = object.tuid
       this.user.username = object.username
       this.user.permission = object.permission
     },

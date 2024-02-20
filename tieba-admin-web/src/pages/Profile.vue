@@ -1,6 +1,20 @@
 <template>
-  <a>基本信息面板<br/>开发中...</a>
-  <a>{{ user.token }}</a>
+  <v-sheet
+    class="d-flex flex-wrap justify-start"
+    color="#fff0">
+
+    <v-card class="ma-3"
+            max-width="240"
+            rounded="lg"
+            hover>
+      <v-card-title>管理员</v-card-title>
+      <v-card-text>
+        <a>UID: {{ user["tuid"] }}
+          <br/>NAME: {{ user["username"] }}</a>
+      </v-card-text>
+
+    </v-card>
+  </v-sheet>
 </template>
 
 <script lang="ts" setup>
