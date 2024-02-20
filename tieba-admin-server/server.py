@@ -187,7 +187,7 @@ if app.ctx.env.bool("WEB", True):
 if __name__ == "__main__":
     app.run(
         host=app.ctx.env.str("HOST", "0.0.0.0"),
-        port=app.ctx.env.int("PORT", 3000),
+        port=app.ctx.env.int("PORT", 3100),
         dev=app.ctx.env.bool("DEV", False),
         workers=app.ctx.env.int("WORKERS", 1),
     )
