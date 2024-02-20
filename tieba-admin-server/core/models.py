@@ -145,3 +145,35 @@ class ForumUserPermission(Model):
             "uid": self.user,
             "permission": self.permission,
         }
+
+
+class ExecuteLog(Model):
+    """
+    记录所有有必要公开的操作记录
+
+    Attributes:
+        user : 执行操作的账号
+        type : 操作类型
+        exec : 操作详细信息
+        date_created: 执行时间
+        date_updated: 最后修改时间
+    """
+    id = fields.BigIntField(pk=True)
+    user = fields.ForeignKeyField("models.User")
+    type = fields.IntField()
+    exec = fields.TextField()
+    date_created: datetime = fields.DatetimeField(auto_now_add=True)
+    date_updated: datetime = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "execute_log"
+
+
+class ExecuteType(IntEnum):
+    PermissionEdit = 1
+    TiebaPermissionEdit = 11
+    Delete = 12
+    Hide = 13
+    Block = 14
+    Black = 15
+    Good = 16
