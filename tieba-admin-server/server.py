@@ -181,6 +181,18 @@ class PluginsStatus(HTTPMethodView):
 
 app.add_route(PluginsStatus.as_view(), "/api/plugins/status")
 
+
+@app.get("/api/self/portrait")
+@level_protected(Permission.MinAdmin, need_user=True)
+async def get_portrait(rqt: Request, user: User):
+    """获取用于获取贴吧用户头像的portrait值
+
+    """
+    async with aiotieba.Client() as client:
+        _user = await client.get_user_info(user.uid)
+    return json(data=_user.portrait)
+
+
 if app.ctx.env.bool("WEB", True):
     app.static("/", "./page/", index="index.html")
 
