@@ -115,8 +115,6 @@ class User(Model):
             "uid": self.uid,
             "tuid": self.tuid,
             "username": self.username,
-            "date_created": str(self.date_created),
-            "date_updated": str(self.date_updated),
         }
 
 
