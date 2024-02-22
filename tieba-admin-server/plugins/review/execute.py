@@ -70,19 +70,19 @@ class Executor(object):
             case ExecuteType.ThreadDelete:
                 rst = await self.client.del_thread(self.obj.fid, self.obj.tid)
                 await ExecuteLog.create(user_id=user.user_id,
-                                        type=ExecuteType.Delete,
+                                        type=ExecuteType.ThreadDelete,
                                         obj=self.obj.tid,
                                         note=self.obj.text)
             case ExecuteType.PostDelete:
                 rst = await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
                 await ExecuteLog.create(user_id=user.user_id,
-                                        type=ExecuteType.Delete,
+                                        type=ExecuteType.PostDelete,
                                         obj=self.obj.pid,
                                         note=self.obj.text)
             case ExecuteType.CommentDelete:
                 rst = await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
                 await ExecuteLog.create(user_id=user.user_id,
-                                        type=ExecuteType.Delete,
+                                        type=ExecuteType.CommentDelete,
                                         obj=self.obj.pid,
                                         note=self.obj.text)
         if not rst:

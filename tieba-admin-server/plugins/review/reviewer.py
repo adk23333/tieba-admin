@@ -9,7 +9,7 @@ from aiotieba.typing import Threads, Thread, Posts, Post, Comment
 from sanic.log import logger
 from tortoise import Tortoise
 
-from core.models import ForumUserPermission, Permission, User, Config
+from core.models import ForumUserPermission, Permission, User, Config, ExecuteType
 from core.plugin import Plugin
 from . import execute
 from .models import Forum as RForum
@@ -209,7 +209,7 @@ class Reviewer(Plugin):
                         raise TypeError("Need to return Executor object")
                     executor.exec_compare(_executor)
 
-            if executor.option != execute.Thread.Delete:
+            if executor.option != ExecuteType.ThreadDelete:
                 need_check_post.append(thread)
 
             if not self.no_exec:
@@ -252,7 +252,7 @@ class Reviewer(Plugin):
                         raise TypeError("Need to return Executor object")
                     executor.exec_compare(_executor)
 
-            if executor.option != execute.Post.Delete:
+            if executor.option != ExecuteType.PostDelete:
                 need_check_comment.append(post)
 
             if not self.no_exec:
