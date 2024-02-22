@@ -56,7 +56,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../tieba-admin-server/page',
+    outDir: '../tieba-admin-server/web',
     emptyOutDir: true,
   }
 })

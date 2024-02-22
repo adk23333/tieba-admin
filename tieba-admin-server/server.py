@@ -194,7 +194,7 @@ async def get_portrait(rqt: Request, user: User):
 
 
 if app.ctx.env.bool("WEB", True):
-    app.static("/", "./page/", index="index.html")
+    app.static("/", "./web/", index="index.html")
 
 if __name__ == "__main__":
     app.run(

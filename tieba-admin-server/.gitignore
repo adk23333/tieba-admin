@@ -2,5 +2,6 @@
 aiotieba.toml
 .cache
 log
+web
 .idea
 .vscode
