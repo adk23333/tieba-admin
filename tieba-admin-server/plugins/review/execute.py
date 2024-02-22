@@ -1,51 +1,14 @@
 from dataclasses import dataclass
-from enum import IntEnum, unique
 from typing import Union, Literal
 
 from aiotieba import Client
 from aiotieba.typing import Comment as Tb_Comment
 from aiotieba.typing import Post as Tb_Post
 from aiotieba.typing import Thread as Tb_Thread
+from aiotieba.typing import UserInfo_pf
 from sanic.log import logger
 
-
-@unique
-class OptionType(IntEnum):
-    Empty = 0  # 无操作
-
-
-@unique
-class User(IntEnum):
-    Block = 1  # 封禁
-    Black = 2  # 拉黑
-
-
-@unique
-class Thread(IntEnum):
-    """
-    对主题贴操作
-    """
-    Hide = 3  # 隐藏
-    Delete = 4  # 删除
-
-
-@unique
-class Post(IntEnum):
-    """
-    对楼层操作
-    """
-    Delete = 5  # 删除
-
-
-@unique
-class Comment(IntEnum):
-    """
-    对楼中楼操作
-    """
-    Delete = 6  # 删除
-
-
-UnitOptionType = Union[OptionType, Thread, Post, Comment]
+from core.models import ExecuteLog, ExecuteType
 
 
 @dataclass
@@ -64,8 +27,8 @@ class Executor(object):
     """
     client: Client = None
     obj: Union[Tb_Thread, Tb_Post, Tb_Comment, None] = None
-    user_opt: Union[User, OptionType] = OptionType.Empty
-    option: UnitOptionType = OptionType.Empty
+    user_opt: ExecuteType = ExecuteType.Empty
+    option: ExecuteType = ExecuteType.Empty
     user_day: int = 0
     opt_day: int = 0
 
@@ -76,30 +39,54 @@ class Executor(object):
             None
 
         """
+        user: UserInfo_pf = await self.client.get_self_info()
         rst = True
         match self.user_opt:
-            case OptionType.Empty:
+            case ExecuteType.Empty:
                 pass
-            case User.Block:
+            case ExecuteType.Block:
                 rst = await self.client.block(self.obj.fid, self.obj.user.portrait, day=self.user_day)
-            case User.Black:
+                await ExecuteLog.create(user_id=user.user_id,
+                                        type=ExecuteType.Block,
+                                        obj=self.obj.user.user_id,
+                                        note=f"{self.user_day}")
+            case ExecuteType.Black:
                 rst = await self.client.add_bawu_blacklist(self.obj.fname, self.obj.user.portrait)
+                await ExecuteLog.create(user_id=user.user_id,
+                                        type=ExecuteType.Black,
+                                        obj=self.obj.user.user_id)
         if not rst:
-            logger.warning(rst.err.__str__())
+            logger.warning(rst.err)
         rst = True
         match self.option:
-            case OptionType.Empty:
+            case ExecuteType.Empty:
                 pass
-            case Thread.Hide:
+            case ExecuteType.ThreadHide:
                 rst = await self.client.hide_thread(self.obj.fid, self.obj.tid)
-            case Thread.Delete:
+                await ExecuteLog.create(user_id=user.user_id,
+                                        type=ExecuteType.Hide,
+                                        obj=self.obj.tid,
+                                        note=self.obj.text)
+            case ExecuteType.ThreadDelete:
                 rst = await self.client.del_thread(self.obj.fid, self.obj.tid)
-            case Post.Delete:
+                await ExecuteLog.create(user_id=user.user_id,
+                                        type=ExecuteType.Delete,
+                                        obj=self.obj.tid,
+                                        note=self.obj.text)
+            case ExecuteType.PostDelete:
                 rst = await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
-            case Comment.Delete:
+                await ExecuteLog.create(user_id=user.user_id,
+                                        type=ExecuteType.Delete,
+                                        obj=self.obj.pid,
+                                        note=self.obj.text)
+            case ExecuteType.CommentDelete:
                 rst = await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
+                await ExecuteLog.create(user_id=user.user_id,
+                                        type=ExecuteType.Delete,
+                                        obj=self.obj.pid,
+                                        note=self.obj.text)
         if not rst:
-            logger.warning(rst.err.__str__())
+            logger.warning(rst.err)
 
     def exec_compare(self, exec2):
         """
@@ -147,7 +134,7 @@ def hide(client: Client, thread: Tb_Thread, day: int = 1):
     return Executor(
         client,
         thread,
-        option=Thread.Hide,
+        option=ExecuteType.ThreadHide,
         opt_day=day,
     )
 
@@ -164,19 +151,19 @@ def delete(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Lite
         Executor
     """
     if isinstance(obj, Tb_Thread):
-        option = Thread.Delete
+        option = ExecuteType.ThreadDelete
     elif isinstance(obj, Tb_Post):
-        option = Post.Delete
+        option = ExecuteType.PostDelete
     elif isinstance(obj, Tb_Comment):
-        option = Comment.Delete
+        option = ExecuteType.CommentDelete
     else:
-        option = OptionType.Empty
+        option = ExecuteType.Empty
 
     if day:
         if day == -1:
-            user_opt = User.Black
+            user_opt = ExecuteType.Black
         else:
-            user_opt = User.Block
+            user_opt = ExecuteType.Block
         return Executor(
             client,
             obj,
@@ -206,7 +193,7 @@ def block(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Liter
     return Executor(
         client,
         obj,
-        user_opt=User.Block,
+        user_opt=ExecuteType.Block,
         user_day=day
     )
 
@@ -224,5 +211,5 @@ def black(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment]):
     return Executor(
         client,
         obj,
-        user_opt=User.Black,
+        user_opt=ExecuteType.Black,
     )

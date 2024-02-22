@@ -154,26 +154,61 @@ class ExecuteLog(Model):
     Attributes:
         user : 执行操作的账号
         type : 操作类型
-        exec : 操作详细信息
+        note : 备注
         date_created: 执行时间
         date_updated: 最后修改时间
     """
     id = fields.BigIntField(pk=True)
     user = fields.ForeignKeyField("models.User")
     type = fields.IntField()
-    exec = fields.TextField()
+    obj = fields.BigIntField()
+    note = fields.TextField(default="")
     date_created: datetime = fields.DatetimeField(auto_now_add=True)
     date_updated: datetime = fields.DatetimeField(auto_now=True)
 
     class Meta:
         table = "execute_log"
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user": self.user,
+            "type": self.type,
+            "note": self.note,
+        }
 
+
+@unique
 class ExecuteType(IntEnum):
+    """
+    操作类型
+    
+    Attributes:
+        Empty: 无操作
+        PermissionEdit: 修改本站用户权限
+    
+        TiebaPermissionEdit: 修改贴吧用户权限
+        ThreadDelete: 删除主题贴
+        ThreadHide: 屏蔽主题贴
+        
+        PostDelete: 删除楼层
+        CommentDelete: 删除楼中楼
+        
+        Block: 封禁用户
+        Black: 将用户加入黑名单
+        Good: 加精
+        
+    """
+    Empty = 0
     PermissionEdit = 1
-    TiebaPermissionEdit = 11
-    Delete = 12
-    Hide = 13
-    Block = 14
-    Black = 15
-    Good = 16
+
+    TiebaPermissionEdit = 101
+    ThreadDelete = 102
+    ThreadHide = 103
+
+    PostDelete = 104
+    CommentDelete = 105
+
+    Block = 106
+    Black = 107
+    Good = 108
