@@ -2,7 +2,7 @@
   <v-dialog v-model="dialog" activator="parent" width="360">
     <v-card title="内容审查">
       <v-card-text>
-        实际执行惩罚：
+        不实际执行惩罚：
         <v-switch
           v-model="no_exec"
           @update:modelValue="onExecSwitch"
