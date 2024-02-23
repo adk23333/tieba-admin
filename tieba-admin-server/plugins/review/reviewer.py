@@ -1,5 +1,6 @@
 import asyncio
 import random
+import traceback
 from asyncio import sleep
 from enum import Enum
 from typing import Tuple, Callable, Dict, Literal, List, Union, Coroutine, Any
@@ -319,7 +320,6 @@ class Reviewer(Plugin):
         await Tortoise.init(db_url=kwargs["db_url"],
                             modules={"models": ["core.models", review_models]})
         await Tortoise.generate_schemas()
-
         temp = await self.init_config()
         user_with_fname: List[Tuple[User, str]] = [(await t.user.get(), t.fname) for t in temp]
         for i in user_with_fname:
@@ -342,5 +342,11 @@ class Reviewer(Plugin):
             logger.setLevel(kwargs["log_level"])
             logger.info("[Reviewer] running.")
             asyncio.run(self.async_run(db_url=kwargs["db_url"]))
+        except Exception:
+            logger.warning(repr(traceback.format_exc()))
+
         except KeyboardInterrupt:
             pass
+
+        finally:
+            asyncio.run(Tortoise.close_connections())
