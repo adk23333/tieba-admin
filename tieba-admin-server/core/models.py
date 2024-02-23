@@ -169,11 +169,11 @@ class ExecuteLog(Model):
     class Meta:
         table = "execute_log"
 
-    def to_dict(self):
+    async def to_dict(self):
         return {
             "id": self.id,
-            "user": self.user,
-            "type": self.type,
+            "user": (await self.user).username,
+            "type": ExecuteType(self.type).name,
             "note": self.note,
         }
 

@@ -16,7 +16,7 @@ from tortoise.contrib.sanic import register_tortoise
 from core import level_protected
 from core.exception import ArgException, err_rps
 from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse
-from core.models import User, Config, password_hasher, Permission, ForumUserPermission
+from core.models import User, Config, password_hasher, Permission, ForumUserPermission, ExecuteLog
 from core.utils import validate_password, get_modules, json
 
 LOG_FILE_PATH = "./log/server.log"
@@ -191,6 +191,24 @@ async def get_portrait(rqt: Request, user: User):
     async with aiotieba.Client() as client:
         _user = await client.get_user_info(user.uid)
     return json(data=_user.portrait)
+
+
+@app.get("/api/logs/exec")
+@level_protected(Permission.Ordinary)
+async def get_log(rqt: Request):
+    try:
+        limit = int(rqt.args.get("limit", 20))
+
+        if limit > 50 or limit <= 0:
+            limit = 50
+        pn = int(rqt.args.get("pn", 0))
+        if pn < 0:
+            pn = 0
+        offset = pn * limit
+        logs = await ExecuteLog.all().offset(offset).limit(limit)
+        return json(data=[await log.to_dict() for log in logs])
+    except TypeError:
+        return json("参数错误")
 
 
 if app.ctx.env.bool("WEB", True):
