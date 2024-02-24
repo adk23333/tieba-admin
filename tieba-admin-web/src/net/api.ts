@@ -146,6 +146,6 @@ export const get_func_status = () => {
   return serviceAxios.get("/review/function")
 }
 
-export const get_logs = (limit: number = 20, pn: number = 0) => {
+export const get_logs = (pn: number = 1, limit: number = 20, sort: string | null = null) => {
   return serviceAxios.get(`/logs/exec?limit=${limit}&pn=${pn}`)
 }
