@@ -201,14 +201,14 @@ async def get_log(rqt: Request):
 
         if limit > 50 or limit <= 0:
             limit = 50
-        pn = int(rqt.args.get("pn", 0))
-        if pn < 0:
-            pn = 0
-        offset = pn * limit
-        logs = await ExecuteLog.all().offset(offset).limit(limit)
-        return json(data=[await log.to_dict() for log in logs])
-    except TypeError:
+        pn = int(rqt.args.get("pn", 1))
+        if pn < 1:
+            pn = 1
+    except (TypeError, ValueError):
         return json("参数错误")
+    offset = (pn - 1) * limit
+    logs = await ExecuteLog.all().offset(offset).limit(limit)
+    return json(data={"items": [await log.to_dict() for log in logs], "total": await ExecuteLog.all().count()})
 
 
 if app.ctx.env.bool("WEB", True):

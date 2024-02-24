@@ -174,7 +174,10 @@ class ExecuteLog(Model):
             "id": self.id,
             "user": (await self.user).username,
             "type": ExecuteType(self.type).name,
+            "obj": self.obj,
             "note": self.note,
+            "date_created": str(self.date_created.strftime("%Y-%m-%d %H:%M:%S")),
+            "date_updated": str(self.date_updated.strftime("%Y-%m-%d %H:%M:%S")),
         }
 
 
