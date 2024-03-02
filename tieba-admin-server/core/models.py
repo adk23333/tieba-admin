@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from enum import IntEnum, unique
+from enum import IntEnum, unique, Enum
 from typing import Any, Optional
 
 from argon2 import PasswordHasher
@@ -13,26 +13,26 @@ password_hasher = PasswordHasher()
 
 
 @unique
-class Permission(IntEnum):
+class Permission(Enum):
     """
     权限枚举
     
     Attributes:
-        Master : 5
-        SuperAdmin : 4
-        HighAdmin : 3
-        MinAdmin : 2
-        Creator : 1
-        Ordinary : 0
-        Black : -10000
+        Master : admin
+        SuperAdmin : super
+        HighAdmin : high
+        MinAdmin : min
+        Creator : creator
+        Ordinary : ordinary
+        Black : black
     """
-    Master = 5
-    SuperAdmin = 4
-    HighAdmin = 3
-    MinAdmin = 2
-    Creator = 1
-    Ordinary = 0
-    Black = -10000
+    Master = "admin"
+    SuperAdmin = "super"
+    HighAdmin = "high"
+    MinAdmin = "min"
+    Creator = "creator"
+    Ordinary = "ordinary"
+    Black = "black"
 
 
 class Config(Model):
@@ -131,7 +131,7 @@ class ForumUserPermission(Model):
     fid = fields.IntField()
     fname = fields.CharField(max_length=128)
     user = fields.ForeignKeyField("models.User")
-    permission = fields.IntField(default=Permission.Ordinary.value)
+    permission = fields.CharField(max_length=128, default=Permission.Ordinary.value)
     date_created: datetime = fields.DatetimeField(auto_now_add=True)
     date_updated: datetime = fields.DatetimeField(auto_now=True)
 
@@ -143,8 +143,11 @@ class ForumUserPermission(Model):
             "fid": self.fid,
             "fname": self.fname,
             "uid": self.user,
-            "permission": self.permission,
+            "permission": self.get_permission(),
         }
+
+    def get_permission(self):
+        return json.loads(self.permission)
 
 
 class ExecuteLog(Model):

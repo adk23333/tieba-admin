@@ -10,12 +10,11 @@ from sanic import Sanic, Request, response
 from sanic.log import LOGGING_CONFIG_DEFAULTS, logger
 from sanic.views import HTTPMethodView
 from sanic_ext import Extend
-from sanic_jwt import Initialize
+from sanic_jwt import Initialize, protected, scoped, inject_user
 from tortoise.contrib.sanic import register_tortoise
 
-from core import level_protected
 from core.exception import ArgException, err_rps
-from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse
+from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse, scope_extender
 from core.models import User, Config, password_hasher, Permission, ForumUserPermission, ExecuteLog
 from core.utils import validate_password, get_modules, json
 
@@ -62,7 +61,8 @@ register_tortoise(app, db_url=app.ctx.DB_URL, modules={'models': models}, genera
 Initialize(app, authenticate=authenticate,
            retrieve_user=retrieve_user,
            configuration_class=JwtConfig,
-           responses_class=JwtResponse)
+           responses_class=JwtResponse,
+           add_scopes_to_payload=scope_extender)
 
 plugins = get_modules("./plugins")
 for plugin_name, plugin in plugins.items():
@@ -125,7 +125,8 @@ async def first_login_api(rqt: Request):
 
 
 @app.get("/api/plugins")
-@level_protected(Permission.MinAdmin)
+@protected()
+@scoped(["admin", "super", "high", "min"], False)
 async def get_plugins(rqt: Request):
     """获取所有插件的名字
 
@@ -134,7 +135,8 @@ async def get_plugins(rqt: Request):
 
 
 class PluginsStatus(HTTPMethodView):
-    @level_protected(Permission.MinAdmin)
+    @protected()
+    @scoped(["admin", "super", "high", "min"], False)
     async def get(self, rqt: Request):
         """获取插件状态
 
@@ -145,7 +147,8 @@ class PluginsStatus(HTTPMethodView):
         plugin_work: dict = rqt.app.m.workers.get(f"Sanic-{_plugin}-0")
         return json("插件状态", {"status": bool(plugin_work)})
 
-    @level_protected(Permission.HighAdmin)
+    @protected()
+    @scoped(["admin", "super", "high"], False)
     async def post(self, rqt: Request):
         """设置插件状态
 
@@ -183,7 +186,9 @@ app.add_route(PluginsStatus.as_view(), "/api/plugins/status")
 
 
 @app.get("/api/self/portrait")
-@level_protected(Permission.MinAdmin, need_user=True)
+@inject_user()
+@protected()
+@scoped(["admin", "super", "high", "min"], False)
 async def get_portrait(rqt: Request, user: User):
     """获取用于获取贴吧用户头像的portrait值
 
@@ -194,7 +199,8 @@ async def get_portrait(rqt: Request, user: User):
 
 
 @app.get("/api/logs/exec")
-@level_protected(Permission.Ordinary)
+@protected()
+@scoped(["admin", "super", "high", "min"], False)
 async def get_log(rqt: Request):
     try:
         limit = int(rqt.args.get("limit", 20))
@@ -213,6 +219,8 @@ async def get_log(rqt: Request):
 
 if app.ctx.env.bool("WEB", True):
     app.static("/", "./web/", index="index.html")
+
+# TODO 吧权限检测 成员管理接口
 
 if __name__ == "__main__":
     app.run(
