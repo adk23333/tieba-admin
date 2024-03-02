@@ -194,27 +194,33 @@ class ExecuteType(IntEnum):
         PermissionEdit: 修改本站用户权限
     
         TiebaPermissionEdit: 修改贴吧用户权限
+
         ThreadDelete: 删除主题贴
         ThreadHide: 屏蔽主题贴
         
         PostDelete: 删除楼层
+
         CommentDelete: 删除楼中楼
         
         Block: 封禁用户
         Black: 将用户加入黑名单
+
         Good: 加精
         
     """
     Empty = 0
     PermissionEdit = 1
 
-    TiebaPermissionEdit = 101
-    ThreadDelete = 102
-    ThreadHide = 103
+    TiebaPermissionEdit = 100
 
-    PostDelete = 104
-    CommentDelete = 105
+    ThreadDelete = 110
+    ThreadHide = 111
 
-    Block = 106
-    Black = 107
-    Good = 108
+    PostDelete = 120
+
+    CommentDelete = 130
+
+    Block = 140
+    Black = 141
+
+    Good = 150
