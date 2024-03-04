@@ -72,4 +72,4 @@ class JwtResponse(Responses):
 
 async def scope_extender(user: User, *args, **kwargs):
     p = await ForumUserPermission.get(user=user)
-    return p.get_permission()
+    return p.permission
