@@ -15,6 +15,7 @@ from tortoise.contrib.sanic import register_tortoise
 
 from core.exception import ArgException, err_rps
 from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse, scope_extender
+from core.manager import manager
 from core.models import User, Config, password_hasher, Permission, ForumUserPermission, ExecuteLog
 from core.utils import validate_password, get_modules, json
 
@@ -51,6 +52,9 @@ Extend(app)
 app.ctx.env = Env()
 app.ctx.env.read_env(recurse=False)
 app.ctx.DB_URL = app.ctx.env.str("DB_URL", "sqlite://.cache/db.sqlite")
+
+app.blueprint(manager)
+
 models = ['core.models']
 
 if app.ctx.env.bool("DEV", False):

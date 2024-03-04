@@ -138,16 +138,13 @@ class ForumUserPermission(Model):
     class Meta:
         table = "forum_user_permission"
 
-    def to_dict(self):
+    async def to_dict(self):
         return {
             "fid": self.fid,
             "fname": self.fname,
-            "uid": self.user,
-            "permission": self.get_permission(),
+            "user": (await self.user.get()).to_dict(),
+            "permission": self.permission,
         }
-
-    def get_permission(self):
-        return json.loads(self.permission)
 
 
 class ExecuteLog(Model):
