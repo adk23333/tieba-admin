@@ -56,8 +56,8 @@ app.ctx.env = Env()
 app.ctx.env.read_env(recurse=False)
 app.ctx.DB_URL = app.ctx.env.str("DB_URL", "sqlite://.cache/db.sqlite")
 
-if app.ctx.DB_URL.startswith("sqlite") and not os.path.exists(app.ctx.DB_URL):
-    open(app.ctx.DB_URL, 'w').close()
+if app.ctx.DB_URL.startswith("sqlite") and not os.path.exists(app.ctx.DB_URL.replace("sqlite://", "")):
+    open(app.ctx.DB_URL.replace("sqlite://", ""), 'w').close()
 
 app.blueprint(manager)
 
