@@ -47,6 +47,9 @@ LOGGING_CONFIG.update({
     },
 })
 
+if not os.path.exists('./log'):
+    os.makedirs('./log')
+
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
 app.ctx.env = Env()
