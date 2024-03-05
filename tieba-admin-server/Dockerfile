@@ -1,4 +1,4 @@
-FROM python:3.11.6-buster
+FROM python:3.11-buster
 
 WORKDIR /tieba
 
