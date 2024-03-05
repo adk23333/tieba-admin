@@ -95,7 +95,7 @@ async def init_server(_app):
 @app.on_request
 async def first_login_check(rqt: Request):
     is_first = await Config.get_bool(key="first")
-    if is_first and rqt.path != '/api/first_login':
+    if is_first and rqt.path != '/api/first_login' and rqt.path.startswith("/api"):
         return response.json({"is_first": True}, 403)
 
 
