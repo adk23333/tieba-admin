@@ -4,6 +4,6 @@ WORKDIR /tieba
 
 COPY . .
 
-RUN apt-get update && pip install -r requirements.txt
+RUN pip install -r requirements.txt
 
 CMD ["sh", "start.sh"]
