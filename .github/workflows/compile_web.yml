@@ -7,6 +7,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: cd web
+        run: cd ./tieba-admin-web
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Node
@@ -14,8 +16,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-      - name: cd web
-        run: cd ./tieba-admin-web
+
       - name: Install dependencies
         run: npm install
       - name: Build
