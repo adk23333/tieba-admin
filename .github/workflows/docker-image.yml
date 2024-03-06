@@ -8,9 +8,6 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./tieba-admin-server
     steps:
       -
         name: Checkout
@@ -23,10 +20,10 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: ../tieba-admin-web
+        working-directory: ./tieba-admin-web
       - name: Build
         run: npm run build
-        working-directory: ../tieba-admin-web
+        working-directory: ./tieba-admin-web
 
       -
         name: Docker meta
@@ -49,7 +46,7 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./tieba-admin-server
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
