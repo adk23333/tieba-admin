@@ -23,6 +23,10 @@ jobs:
         uses: wow-actions/release-github-action@v2
         with:
           cwd: ./tieba-admin-web
+          branches: |
+            [
+              "main",
+            ]
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
