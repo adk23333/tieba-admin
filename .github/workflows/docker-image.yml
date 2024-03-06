@@ -17,6 +17,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          context: ./tieba-admin-web
           images: |
             adk23333/tieba-admin
           tags: |
@@ -33,7 +34,7 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./tieba-admin-web
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
