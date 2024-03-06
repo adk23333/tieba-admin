@@ -13,17 +13,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: cd web
-        run: cd ./tieba-admin-web
       - name: Install dependencies
         run: npm install
+        working-directory: ./tieba-admin-web
       - name: Build
         run: npm run build
+        working-directory: ./tieba-admin-web
       - name: Create Release
         uses: wow-actions/release-github-action@v2
-        # with:
-        #   cwd: ./tieba-admin-web
+        with:
+          cwd: ./tieba-admin-web
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
