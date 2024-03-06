@@ -23,10 +23,10 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: .././tieba-admin-web
+        working-directory: ../tieba-admin-web
       - name: Build
         run: npm run build
-        working-directory: .././tieba-admin-web
+        working-directory: ../tieba-admin-web
 
       -
         name: Docker meta
