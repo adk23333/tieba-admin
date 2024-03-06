@@ -25,7 +25,7 @@ jobs:
           cwd: ./tieba-admin-web
           branches: |
             [
-              "main",
+              "main"
             ]
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
