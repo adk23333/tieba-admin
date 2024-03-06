@@ -1,9 +1,9 @@
 name: Compile web page to branch
 
 on:
-  push:
-    paths:
-      - 'tieba-admin-web/**'
+  #  push:
+  #    paths:
+  #      - 'tieba-admin-web/**'
   workflow_dispatch:
 
 jobs:
