@@ -28,3 +28,10 @@ async def check_black(t: Union[Thread, Post, Comment], client: Client):
     if user:
         return block(client, t, 10)
     return empty()
+
+
+@reviewer.thread()
+async def ban_low_user(thread: Thread, client: Client):
+    if thread.user.level == 1:
+        return delete(client, thread)
+    return empty()
