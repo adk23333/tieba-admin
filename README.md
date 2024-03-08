@@ -47,7 +47,11 @@
   docker push adk23333/tieba-admin:latest
   ```
   
-  建议将.cache与log目录共享到宿主机
+  建议将.cache与log目录共享到宿主机，例如
+
+  ```shell
+  -v /tieba/.cache:/to/you/cache/path -v /tieba/log:/to/you/log/path
+  ```
 
 ## ✨配置
 
