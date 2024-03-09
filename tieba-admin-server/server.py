@@ -129,7 +129,7 @@ async def first_login_api(rqt: Request):
             fid=fid,
             fname=rqt.form.get('fname'),
             user=user,
-            permission=Permission.Master,
+            permission=Permission.Master.value,
         )
         await Config.set_config(key="first", v1=False)
         return response.json({"status": 200, "msg": "成功创建超级管理员"})
