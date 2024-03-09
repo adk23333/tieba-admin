@@ -107,7 +107,7 @@ async def first_login_api(rqt: Request):
     """
     try:
         is_first = await Config.get_bool(key="first")
-        if not is_first or is_first is not None:
+        if not is_first:
             return response.json({"status": 403, "msg": "不是首次登录"})
         if not (rqt.form.get('BDUSS') and rqt.form.get('fname')
                 and rqt.form.get('password') and rqt.form.get('STOKEN')):
