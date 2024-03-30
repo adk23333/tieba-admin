@@ -1,6 +1,5 @@
 import asyncio
 import random
-import traceback
 from asyncio import sleep
 from enum import Enum
 from typing import Tuple, Callable, Dict, Literal, List, Union, Coroutine, Any
@@ -9,7 +8,6 @@ from aiotieba import Client, PostSortType, logging
 from aiotieba.typing import Threads, Thread, Posts, Post, Comment
 from sanic.log import logger
 from tortoise import Tortoise
-from tortoise.expressions import Q
 
 from core.models import ForumUserPermission, User, Config, ExecuteType
 from core.plugin import Plugin
@@ -58,40 +56,13 @@ class Reviewer(Plugin):
     """
 
     def __init__(self):
+        super().__init__()
+        self.review_model = "plugins.review.models"
         self.check_map: CheckMap = {'comment': [], 'post': [], 'thread': []}
-        self.clients: Dict[Client, List[str]] = {}
+        self.client: Client = None
+        self.FUP: ForumUserPermission = None
         self.no_exec = True
         self.check_name_map = set()
-
-    async def init_config(self):
-        """
-        主要从数据库加载配置
-        """
-        logging.set_logger(logger)
-        self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
-        if self.no_exec is None:
-            await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
-            self.no_exec = True
-
-        temp = await ForumUserPermission.filter(Q(permission="admin") | Q(permission="super")).all()
-        fnames = [t.fname for t in temp]
-        await RFunction.filter(function__not_in=self.check_name_map).delete()
-        old_name_map: List[str] = [i.function for i in (await RFunction.all())]
-        func_list = []
-        for fname in fnames:
-            for name in self.check_name_map:
-                if name not in old_name_map:
-                    func_list.append(RFunction(function=name, fname_id=fname))
-        await RFunction.bulk_create(func_list)
-
-        return temp
-
-    def __del__(self):
-        """
-        善后
-        """
-        for client in self.clients.keys():
-            client.__aexit__()
 
     def comment(self, description: str = None):
         """
@@ -203,7 +174,7 @@ class Reviewer(Plugin):
             executor = execute.Executor(client=client, obj=thread)
             if not checked:
                 for check in self.check_map['thread']:
-                    func_enable = await RFunction.get(fname=fname, function=check['function'].__name__)
+                    func_enable = await RFunction.get(function=check['function'].__name__)
                     if not func_enable.enable:
                         continue
                     _executor = await check['function'](thread, client)
@@ -246,7 +217,7 @@ class Reviewer(Plugin):
             executor = execute.Executor(client=client, obj=post)
             if not checked:
                 for check in self.check_map['post']:
-                    func_enable = await RFunction.get(fname=post.fname, function=check['function'].__name__)
+                    func_enable = await RFunction.get(function=check['function'].__name__)
                     if not func_enable.enable:
                         continue
                     _executor = await check['function'](post, client)
@@ -284,7 +255,7 @@ class Reviewer(Plugin):
         for comment in comments:
             executor = execute.Executor(client=client, obj=comment)
             for check in self.check_map['comment']:
-                func_enable = await RFunction.get(fname=comment.fname, function=check['function'].__name__)
+                func_enable = await RFunction.get(function=check['function'].__name__)
                 if not func_enable.enable:
                     continue
                 _executor = await check['function'](comment, client)
@@ -304,50 +275,58 @@ class Reviewer(Plugin):
             max_time: 最大间隔时间（单位：秒）
         """
         while True:
-            for fname in self.clients[client]:
-                logger.debug(f"[Reviewer] review {fname}")
-                rst = await RForum.get(fname=fname)
-                if rst.enable:
-                    await self.check_threads(client, fname)
-                await sleep(random.uniform(min_time, max_time))
+            logger.debug(f"[Reviewer] review {self.FUP.fname}")
+            rst = await RForum.get(fname=self.FUP.fname)
+            if rst.enable:
+                await self.check_threads(client, self.FUP.fname)
+            if self.no_exec:
+                break
+            await sleep(random.uniform(min_time, max_time))
 
-    async def async_run(self, review_models="plugins.review.models", **kwargs):
+    async def init_config(self):
         """
-        初始化数据库连接以及加载需要用到的客户端配置
-        Args:
-            review_models:
-            **kwargs: 将从中提取db_url
+        主要从数据库加载配置
         """
-        await Tortoise.init(db_url=kwargs["db_url"],
-                            modules={"models": ["core.models", review_models]})
+        logging.set_logger(logger)
+        self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
+        if self.no_exec is None:
+            await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
+            self.no_exec = True
+
+        self.FUP = await ForumUserPermission.filter(permission="super").get()
+        await RFunction.filter(function__not_in=self.check_name_map).delete()
+        old_name_map: List[str] = [i.function for i in (await RFunction.all())]
+        func_list = []
+
+        for c in self.check_name_map:
+            if c not in old_name_map:
+                func_list.append(RFunction(function=c))
+        await RFunction.bulk_create(func_list)
+
+        rf = await RForum.filter(fname=self.FUP.fname).get_or_none()
+        if not rf:
+            await RForum.create(fname=self.FUP.fname)
+
+    def on_start(self):
+        logger.setLevel(self.kwargs["log_level"])
+        logger.info("[Reviewer] running.")
+
+    async def async_start(self):
+        self.kwargs["models"].append(self.review_model)
+        await Tortoise.init(db_url=self.kwargs["db_url"],
+                            modules={"models": self.kwargs["models"]})
         await Tortoise.generate_schemas()
-        temp = await self.init_config()
-        user_with_fname: List[Tuple[User, str]] = [(await t.user.get(), t.fname) for t in temp]
-        for i in user_with_fname:
-            client = await Client(i[0].BDUSS, i[0].STOKEN).__aenter__()
-            try:
-                self.clients[client].append(i[1])
-            except KeyError:
-                self.clients[client] = []
-                self.clients[client].append(i[1])
 
-        await asyncio.gather(*[self.run_with_client(client) for client in self.clients])
+    async def async_running(self):
+        await self.init_config()
 
-    def run(self, **kwargs):
-        """
-        用此函数启动执行程序
-        Args:
-            **kwargs: 从中提取db_url
-        """
-        try:
-            logger.setLevel(kwargs["log_level"])
-            logger.info("[Reviewer] running.")
-            asyncio.run(self.async_run(db_url=kwargs["db_url"]))
-        except Exception:
-            logger.warning(repr(traceback.format_exc()))
+        user: User = await self.FUP.user
+        self.client = await Client(user.BDUSS, user.STOKEN).__aenter__()
 
-        except KeyboardInterrupt:
-            pass
+        await asyncio.gather(*[self.run_with_client(self.client)])
 
-        finally:
-            asyncio.run(Tortoise.close_connections())
+    async def async_stop(self):
+        await Tortoise.close_connections()
+
+    def on_stop(self):
+        self.client.__aexit__()

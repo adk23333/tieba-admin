@@ -174,10 +174,11 @@ class PluginsStatus(HTTPMethodView):
         if status == "1" and plugin_work:
             return json("插件已在运行", {"status": True})
         elif status == "1" and not plugin_work:
-            rqt.app.m.manage(_plugin, plugins[_plugin].plugin.run,
+            rqt.app.m.manage(_plugin, plugins[_plugin].plugin.start_plugin_with_process,
                              {
                                  "db_url": rqt.app.ctx.DB_URL,
                                  "log_level": logger.level,
+                                 "models": models,
                              })
             await sleep(1)
             plugin_work: dict = rqt.app.m.workers.get(f"Sanic-{_plugin}-0")

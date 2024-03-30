@@ -60,7 +60,6 @@ class Function(Model):
     记录需要使用的方法
     """
     function = fields.CharField(max_length=64, pk=True)
-    fname = fields.ForeignKeyField("models.Forum", related_name="forum_fname")
     enable = fields.BooleanField(default=False)
     date_created: datetime = fields.DatetimeField(auto_now_add=True)
     date_updated: datetime = fields.DatetimeField(auto_now=True)
@@ -71,7 +70,6 @@ class Function(Model):
     async def to_json(self):
         return {
             "function": self.function,
-            "fname": (await self.fname.get()).fname,
             "enable": self.enable,
         }
 

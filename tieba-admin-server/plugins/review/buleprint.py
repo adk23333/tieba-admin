@@ -138,11 +138,11 @@ class FunctionApi(HTTPMethodView):
         _func: Dict = rqt.json
         msg = None
         if _func:
-            _f = await Function.filter(fname=_func["fname"], function=_func["function"]).get_or_none()
+            _f = await Function.filter(function=_func["function"]).get_or_none()
             if _f:
                 _f.enable = _func["enable"]
                 await _f.save()
-                msg = f"修改{_func['fname']}吧{_func['function']}方法状态成功"
+                msg = f"修改{_func['function']}方法状态成功"
             else:
                 return json(f"{_func['function']}不存在")
 

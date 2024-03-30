@@ -1,6 +1,14 @@
 <template>
   <v-dialog v-model="dialog" activator="parent" width="360">
-    <v-card title="内容审查">
+    <v-card>
+      <v-card-title>
+        内容审查 - {{ forums[0].fname }}吧
+        <v-switch @update:modelValue="onForumSwitch(forums[0])"
+                  v-model="forums[0].enable"
+                  class="mr-n16 mb-n6"
+                  color="green"></v-switch>
+      </v-card-title>
+
       <v-card-text>
         不实际执行惩罚：
         <v-switch
@@ -32,19 +40,14 @@
       </v-card-text>
 
       <v-card-text v-for="forum in forums">
-        {{ forum["fname"] }}吧
-        <v-switch @update:modelValue="onForumSwitch(forum)"
-                  v-model="forum.enable"
-                  class="mr-n16 mb-n6"
-                  color="green"></v-switch>
         <v-sheet>
           <v-row v-for="func in funcs"
                  class="ml-3"
                  dense>
-            <v-col v-if="func['fname']==forum['fname']">
+            <v-col>
               {{ func['function'] }}
             </v-col>
-            <v-col v-if="func['fname']==forum['fname']">
+            <v-col>
               <v-switch @update:modelValue="onFuncSwitch(func)"
                         v-model="func.enable"
                         class="mr-n16 mb-n6 mt-n4"
