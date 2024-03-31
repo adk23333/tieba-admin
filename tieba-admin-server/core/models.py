@@ -115,7 +115,7 @@ class User(Model):
     uid = fields.BigIntField(pk=True)
     tuid = fields.BigIntField(null=True, default=None)
     username = fields.CharField(max_length=64)
-    password = fields.CharField(max_length=128)
+    password = fields.CharField(max_length=128, null=True, default=None)
     BDUSS = fields.CharField(max_length=200, null=True, default='')
     STOKEN = fields.CharField(max_length=80, null=True, default='')
     master = fields.BigIntField(null=True, default=None)
@@ -171,12 +171,13 @@ class ForumUserPermission(Model):
         table = "forum_user_permission"
 
     async def to_dict(self):
-        return {
+        t = {
             "fid": self.fid,
             "fname": self.fname,
-            "user": (await self.user.get()).to_dict(),
             "permission": self.permission,
         }
+        t.update((await self.user.get()).to_dict())
+        return t
 
 
 class ExecuteLog(Model):

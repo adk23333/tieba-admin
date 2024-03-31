@@ -3,7 +3,9 @@ import os
 import random
 import re
 import string
+from typing import Union
 
+import aiotieba
 from sanic import Request
 from sanic.response import json as sanic_json, HTTPResponse
 
@@ -62,3 +64,30 @@ def get_modules(path):
 
 def generate_random_string(length):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+
+def get_num_between_two_signs(s: str, sign: str) -> int:
+    if (first_sign := s.find(sign)) == -1:
+        return 0
+    if (last_sign := s.rfind(sign)) == -1:
+        return 0
+    sub_str = s[first_sign + 1: last_sign]
+    if not sub_str.isdecimal():
+        return 0
+    return int(sub_str)
+
+
+async def arg2user_info(client: aiotieba.Client, arg: str,
+                        require: aiotieba.enums.ReqUInfo = aiotieba.enums.ReqUInfo.BASIC
+                        ) -> Union[aiotieba.typing.UserInfo_pf, aiotieba.typing.UserInfo]:
+    if tieba_uid := get_num_between_two_signs(arg, '#'):
+        user = await client.tieba_uid2user_info(tieba_uid)
+    elif user_id := get_num_between_two_signs(arg, '/'):
+        user = await client.get_user_info(user_id, require)
+    else:
+        user = await client.get_user_info(arg, require)
+
+    if not user:
+        raise ValueError("找不到对应的用户")
+
+    return user
