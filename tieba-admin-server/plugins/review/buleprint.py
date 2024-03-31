@@ -4,7 +4,7 @@ from sanic import Blueprint, Request
 from sanic.views import HTTPMethodView
 from sanic_jwt import protected, scoped
 
-from core.models import Config
+from core.models import Config, Permission
 from core.utils import json
 from .models import Keyword, Forum, Function
 
@@ -13,7 +13,7 @@ bp = Blueprint("review")
 
 @bp.get("/api/review/info")
 @protected()
-@scoped(["admin", "super", "high", "min"], False)
+@scoped(Permission.min(), False)
 async def info(rqt: Request):
     """获取本插件基本信息
 
@@ -28,7 +28,7 @@ async def info(rqt: Request):
 
 class NoExec(HTTPMethodView):
     @protected()
-    @scoped(["admin", "super", "high", "min"], False)
+    @scoped(Permission.min(), False)
     async def get(self, rqt: Request):
         """获取是否实际执行操作的信息
 
@@ -37,7 +37,7 @@ class NoExec(HTTPMethodView):
         return json(data={"REVIEW_NO_EXEC": _no_exec})
 
     @protected()
-    @scoped(["admin", "super", "high"], False)
+    @scoped(Permission.high(), False)
     async def post(self, rqt: Request):
         """设置是否实际执行操作
 
@@ -60,7 +60,7 @@ bp.add_route(NoExec.as_view(), "/api/review/no_exec")
 
 class KeywordApi(HTTPMethodView):
     @protected()
-    @scoped(["admin", "super", "high", "min"], False)
+    @scoped(Permission.min(), False)
     async def get(self, rqt: Request):
         """获取关键词审查的关键词
 
@@ -69,7 +69,7 @@ class KeywordApi(HTTPMethodView):
         return json(data=[k.keyword for k in keywords])
 
     @protected()
-    @scoped(["admin", "super", "high"], False)
+    @scoped(Permission.high(), False)
     async def post(self, rqt: Request):
         """设置关键词
 
@@ -90,7 +90,7 @@ bp.add_route(KeywordApi.as_view(), "/api/review/keyword")
 
 class ForumApi(HTTPMethodView):
     @protected()
-    @scoped(["admin", "super", "high", "min"], False)
+    @scoped(Permission.min(), False)
     async def get(self, rqt: Request):
         """获取每个贴吧的监控情况
 
@@ -98,7 +98,7 @@ class ForumApi(HTTPMethodView):
         return json(data=[f.to_json() for f in await Forum.all()])
 
     @protected()
-    @scoped(["admin", "super", "high"], False)
+    @scoped(Permission.high(), False)
     async def post(self, rqt: Request):
         """开关某贴吧监控
 
@@ -122,7 +122,7 @@ bp.add_route(ForumApi.as_view(), "/api/review/forum")
 
 class FunctionApi(HTTPMethodView):
     @protected()
-    @scoped(["admin", "super", "high", "min"], False)
+    @scoped(Permission.min(), False)
     async def get(self, rqt: Request):
         """获取某贴吧下某监控操作的启用情况
 
@@ -130,7 +130,7 @@ class FunctionApi(HTTPMethodView):
         return json(data=[await f.to_json() for f in await Function.all()])
 
     @protected()
-    @scoped(["admin", "super", "high"], False)
+    @scoped(Permission.high(), False)
     async def post(self, rqt: Request):
         """设置某贴吧下某监控操作的启用
 

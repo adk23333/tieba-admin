@@ -10,7 +10,7 @@ manager = Blueprint("manager")
 
 class UserPermission(HTTPMethodView):
     @protected()
-    @scoped(["admin", "super", "high", "min"], False)
+    @scoped(Permission.min(), False)
     async def get(self, rqt: Request):
         _permission = await ForumUserPermission.all()
         permission = []
@@ -19,7 +19,7 @@ class UserPermission(HTTPMethodView):
         return json(data=permission)
 
     @protected()
-    @scoped(["admin", "super"], False)
+    @scoped(Permission.super(), False)
     async def post(self, rqt: Request):
         if not rqt.form.get("uid") or not rqt.form.get("fid") or not rqt.form.get("pm"):
             return json("参数错误")
@@ -31,7 +31,7 @@ class UserPermission(HTTPMethodView):
         if not permission:
             return json("没有该成员")
 
-        if permission.permission == "admin" or rqt.form.get("pm") == "admin":
+        if permission.permission == Permission.Master.value or rqt.form.get("pm") == Permission.Master.value:
             return json("您没有相关权限")
 
         permission.permission = rqt.form.get("pm")

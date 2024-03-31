@@ -139,7 +139,7 @@ async def first_login_api(rqt: Request):
 
 @app.get("/api/plugins")
 @protected()
-@scoped(["admin", "super", "high", "min"], False)
+@scoped(Permission.min(), False)
 async def get_plugins(rqt: Request):
     """获取所有插件的名字
 
@@ -149,7 +149,7 @@ async def get_plugins(rqt: Request):
 
 class PluginsStatus(HTTPMethodView):
     @protected()
-    @scoped(["admin", "super", "high", "min"], False)
+    @scoped(Permission.min(), False)
     async def get(self, rqt: Request):
         """获取插件状态
 
@@ -161,7 +161,7 @@ class PluginsStatus(HTTPMethodView):
         return json("插件状态", {"status": bool(plugin_work)})
 
     @protected()
-    @scoped(["admin", "super", "high"], False)
+    @scoped(Permission.high(), False)
     async def post(self, rqt: Request):
         """设置插件状态
 
@@ -202,7 +202,7 @@ app.add_route(PluginsStatus.as_view(), "/api/plugins/status")
 @app.get("/api/self/portrait")
 @inject_user()
 @protected()
-@scoped(["admin", "super", "high", "min"], False)
+@scoped(Permission.min(), False)
 async def get_portrait(rqt: Request, user: User):
     """获取用于获取贴吧用户头像的portrait值
 
@@ -214,7 +214,7 @@ async def get_portrait(rqt: Request, user: User):
 
 @app.get("/api/logs/exec")
 @protected()
-@scoped(["admin", "super", "high", "min"], False)
+@scoped(Permission.min(), False)
 async def get_log(rqt: Request):
     try:
         limit = int(rqt.args.get("limit", 20))

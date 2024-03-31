@@ -18,7 +18,7 @@ class Permission(Enum):
     权限枚举
     
     Attributes:
-        Master : admin
+        Master : master
         SuperAdmin : super
         HighAdmin : high
         MinAdmin : min
@@ -26,13 +26,45 @@ class Permission(Enum):
         Ordinary : ordinary
         Black : black
     """
-    Master = "admin"
+    Master = "master"
     SuperAdmin = "super"
     HighAdmin = "high"
     MinAdmin = "min"
     Creator = "creator"
     Ordinary = "ordinary"
     Black = "black"
+
+    @staticmethod
+    def all():
+        return [Permission.Black.value, Permission.Ordinary.value, Permission.Creator.value, Permission.MinAdmin.value,
+                Permission.HighAdmin.value, Permission.SuperAdmin.value, Permission.Master.value]
+
+    @staticmethod
+    def ordinary():
+        return [Permission.Ordinary.value, Permission.Creator.value, Permission.MinAdmin.value,
+                Permission.HighAdmin.value, Permission.SuperAdmin.value, Permission.Master.value]
+
+    @staticmethod
+    def creator():
+        return [Permission.Creator.value, Permission.MinAdmin.value, Permission.HighAdmin.value,
+                Permission.SuperAdmin.value, Permission.Master.value]
+
+    @staticmethod
+    def min():
+        return [Permission.MinAdmin.value, Permission.HighAdmin.value, Permission.SuperAdmin.value,
+                Permission.Master.value]
+
+    @staticmethod
+    def high():
+        return [Permission.HighAdmin.value, Permission.SuperAdmin.value, Permission.Master.value]
+
+    @staticmethod
+    def super():
+        return [Permission.SuperAdmin.value, Permission.Master.value]
+
+    @staticmethod
+    def master():
+        return [Permission.Master.value, ]
 
 
 class Config(Model):

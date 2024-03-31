@@ -9,7 +9,7 @@ from aiotieba.typing import Threads, Thread, Posts, Post, Comment
 from sanic.log import logger
 from tortoise import Tortoise
 
-from core.models import ForumUserPermission, User, Config, ExecuteType
+from core.models import ForumUserPermission, User, Config, ExecuteType, Permission
 from core.plugin import Plugin
 from . import execute
 from .models import Forum as RForum
@@ -293,7 +293,7 @@ class Reviewer(Plugin):
             await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
             self.no_exec = True
 
-        self.FUP = await ForumUserPermission.filter(permission="super").get()
+        self.FUP = await ForumUserPermission.filter(permission=Permission.Master.value).get()
         await RFunction.filter(function__not_in=self.check_name_map).delete()
         old_name_map: List[str] = [i.function for i in (await RFunction.all())]
         func_list = []
