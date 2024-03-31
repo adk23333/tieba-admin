@@ -283,11 +283,15 @@ class Reviewer(Plugin):
                 break
             await sleep(random.uniform(min_time, max_time))
 
-    async def init_config(self):
-        """
-        主要从数据库加载配置
-        """
+    async def async_before_start(self):
         logging.set_logger(logger)
+
+        self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
+        if self.no_exec is None:
+            await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
+            self.no_exec = True
+
+        self.FUP = await ForumUserPermission.filter(permission=Permission.Master.value).get()
 
         await RFunction.filter(function__not_in=self.check_name_map).delete()
         old_name_map: List[str] = [i.function for i in (await RFunction.all())]
@@ -297,14 +301,6 @@ class Reviewer(Plugin):
             if c not in old_name_map:
                 func_list.append(RFunction(function=c))
         await RFunction.bulk_create(func_list)
-
-    async def async_before_start(self):
-        self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
-        if self.no_exec is None:
-            await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
-            self.no_exec = True
-
-        self.FUP = await ForumUserPermission.filter(permission=Permission.Master.value).get()
 
         rf = await RForum.filter(fname=self.FUP.fname).get_or_none()
         if not rf:
@@ -321,8 +317,6 @@ class Reviewer(Plugin):
         await Tortoise.generate_schemas()
 
     async def async_running(self):
-        await self.init_config()
-
         user: User = await self.FUP.user
         self.client = await Client(user.BDUSS, user.STOKEN).__aenter__()
 
