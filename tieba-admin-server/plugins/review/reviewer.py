@@ -314,12 +314,11 @@ class Reviewer(Plugin):
         logger.info("[Reviewer] running.")
 
     async def async_start(self):
-        await self.get_fup()
-
         self.kwargs["models"].append(self.review_model)
         await Tortoise.init(db_url=self.kwargs["db_url"],
                             modules={"models": self.kwargs["models"]})
         await Tortoise.generate_schemas()
+        await self.get_fup()
 
     async def async_running(self):
         user: User = await self.FUP.user
