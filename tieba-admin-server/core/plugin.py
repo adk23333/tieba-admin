@@ -1,7 +1,7 @@
 import asyncio
 import traceback
 
-from pigar.log import logger
+from sanic.log import logger
 
 
 class Plugin(object):
