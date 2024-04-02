@@ -241,8 +241,6 @@ async def get_log(rqt: Request):
 if app.ctx.env.bool("WEB", True):
     app.static("/", "./web/", index="index.html")
 
-# TODO 吧权限检测 成员管理接口
-
 if __name__ == "__main__":
     app.run(
         host=app.ctx.env.str("HOST", "0.0.0.0"),
