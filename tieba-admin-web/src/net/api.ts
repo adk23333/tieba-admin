@@ -149,3 +149,19 @@ export const get_func_status = () => {
 export const get_logs = (pn: number = 1, limit: number = 20, sort: string | null = null) => {
   return serviceAxios.get(`/logs/exec?limit=${limit}&pn=${pn}`)
 }
+
+export const get_users = () => {
+  return serviceAxios.get("/manager/user_pm")
+}
+
+export const set_users = (user: string, forum: string, pm: string, del: number = 0) => {
+  return serviceAxios.postForm(
+    "/manager/user_pm",
+    {
+      user: user,
+      forum: forum,
+      pm: pm,
+      del: del
+    }
+  )
+}

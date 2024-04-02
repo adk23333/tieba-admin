@@ -12,6 +12,12 @@ class Plugin(object):
     def __init__(self):
         self.kwargs = {}
 
+    def before_start(self):
+        ...
+
+    async def async_before_start(self):
+        ...
+
     def on_start(self):
         ...
 

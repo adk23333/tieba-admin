@@ -91,6 +91,10 @@ async def init_server(_app):
     if (await Config.get_bool(key="first")) is None:
         await Config.set_config(key="first", v1=True)
 
+    for _plugin in plugins.values():
+        _plugin.plugin.before_start()
+        await _plugin.plugin.async_before_start()
+
 
 @app.on_request
 async def first_login_check(rqt: Request):
