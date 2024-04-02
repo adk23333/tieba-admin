@@ -33,6 +33,10 @@ class UserPermission(HTTPMethodView):
                 user_info = await arg2user_info(client, rqt.form.get("user"), aiotieba.enums.ReqUInfo.ALL)
                 forum_id = await client.get_fid(rqt.form.get("forum"))
 
+            if rqt.form.get("del", "0") == "1":
+                await ForumUserPermission.filter(user_id=user_info.user_id, fid=forum_id).delete()
+                await User.filter(uid=user_info.user_id).delete()
+                return json(f"已删除{user_info.user_name}")
             permission = await ForumUserPermission.filter(user_id=user_info.user_id, fid=forum_id).get_or_none()
             if not permission:
                 permission = await ForumUserPermission(user_id=user_info.user_id, fid=forum_id,
