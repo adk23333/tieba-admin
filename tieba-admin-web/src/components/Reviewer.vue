@@ -119,7 +119,8 @@ const onForumSwitch = (forum: Forum) => {
 }
 
 const onFuncSwitch = (func: Function) => {
-  set_func_status(func.function, func.fname, !func.enable).then((res) => {
+  console.log(func)
+  set_func_status(func.function, !func.enable).then((res) => {
     funcs.value = res.data.data
     message.success(res.data.msg)
   })

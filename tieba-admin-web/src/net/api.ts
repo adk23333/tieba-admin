@@ -127,12 +127,11 @@ export const get_keyword = () => {
   return serviceAxios.get("/review/keyword")
 }
 
-export const set_func_status = (func: string | null = null, fname: string | null = null, enable: boolean | null = null) => {
+export const set_func_status = (func: string | null = null, enable: boolean | null = null) => {
   let data
-  if (!(func == null || fname == null || enable == null)) {
+  if (!(func == null || enable == null)) {
     data = JSON.stringify({
       "function": func,
-      "fname": fname,
       "enable": enable
     })
   }
