@@ -283,6 +283,13 @@ class Reviewer(Plugin):
                 break
             await sleep(random.uniform(min_time, max_time))
 
+    async def get_fup(self):
+        self.FUP = await ForumUserPermission.filter(permission=Permission.Master.value).get_or_none()
+        if self.FUP:
+            rf = await RForum.filter(fname=self.FUP.fname).get_or_none()
+            if not rf:
+                await RForum.create(fname=self.FUP.fname)
+
     async def async_before_start(self):
         logging.set_logger(logger)
 
@@ -290,8 +297,6 @@ class Reviewer(Plugin):
         if self.no_exec is None:
             await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
             self.no_exec = True
-
-        self.FUP = await ForumUserPermission.filter(permission=Permission.Master.value).get()
 
         await RFunction.filter(function__not_in=self.check_name_map).delete()
         old_name_map: List[str] = [i.function for i in (await RFunction.all())]
@@ -302,15 +307,15 @@ class Reviewer(Plugin):
                 func_list.append(RFunction(function=c))
         await RFunction.bulk_create(func_list)
 
-        rf = await RForum.filter(fname=self.FUP.fname).get_or_none()
-        if not rf:
-            await RForum.create(fname=self.FUP.fname)
+        await self.get_fup()
 
     def on_start(self):
         logger.setLevel(self.kwargs["log_level"])
         logger.info("[Reviewer] running.")
 
     async def async_start(self):
+        await self.get_fup()
+
         self.kwargs["models"].append(self.review_model)
         await Tortoise.init(db_url=self.kwargs["db_url"],
                             modules={"models": self.kwargs["models"]})

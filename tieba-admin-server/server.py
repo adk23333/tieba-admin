@@ -92,8 +92,11 @@ async def init_server(_app):
         await Config.set_config(key="first", v1=True)
 
     for _plugin in plugins.values():
-        _plugin.plugin.before_start()
-        await _plugin.plugin.async_before_start()
+        try:
+            _plugin.plugin.before_start()
+            await _plugin.plugin.async_before_start()
+        except Exception:
+            pass
 
 
 @app.on_request
