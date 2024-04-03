@@ -10,6 +10,7 @@
               class="min-width"
               density="compact"
               variant="outlined"
+              :rules="[rules.required]"
               v-model="new_user.user"
               label="ID/username/portrait">
             </v-text-field>
@@ -17,6 +18,15 @@
               class="min-width"
               density="compact"
               variant="outlined"
+              :rules="[rules.passwordMatchNullable, rules.minNullable, rules.max]"
+              v-model="new_user.password"
+              label="密码">
+            </v-text-field>
+            <v-text-field
+              class="min-width"
+              density="compact"
+              variant="outlined"
+              :rules="[rules.required]"
               v-model="new_user.forum"
               label="所属吧名">
             </v-text-field>
@@ -56,6 +66,7 @@ import {useAppStore} from "@/store/app";
 import {ref} from "vue"
 import {get_users, set_users} from "@/net/api";
 import {message} from "@/plugins/toast";
+import {rules} from "@/components/utils";
 
 const store = useAppStore()
 store.set_title('人员管理')
@@ -82,7 +93,8 @@ const totalItems = ref(0)
 const new_user = ref({
   user: "",
   forum: "",
-  pm: ""
+  pm: "",
+  password: ""
 })
 
 // @ts-ignore
