@@ -153,14 +153,15 @@ export const get_users = () => {
   return serviceAxios.get("/manager/user_pm")
 }
 
-export const set_users = (user: string, forum: string, pm: string, del: number = 0) => {
+export const set_users = (user: string, forum: string, pm: string, del: number = 0, password: string | null = null) => {
   return serviceAxios.postForm(
     "/manager/user_pm",
     {
       user: user,
       forum: forum,
       pm: pm,
-      del: del
+      del: del,
+      password: password
     }
   )
 }

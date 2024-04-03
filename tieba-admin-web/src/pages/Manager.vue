@@ -108,7 +108,7 @@ function loadItems({page, itemsPerPage, sortBy}) {
 }
 
 function submit(del = 0) {
-  set_users(new_user.value.user, new_user.value.forum, new_user.value.pm, del).then((res) => {
+  set_users(new_user.value.user, new_user.value.forum, new_user.value.pm, del, new_user.value.password).then((res) => {
     message.success(res.data.msg)
   }).finally(() => {
     loadItems({page: 0, itemsPerPage: 0, sortBy: 0})
