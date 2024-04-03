@@ -9,8 +9,6 @@ from sanic_jwt.exceptions import AuthenticationFailed
 from tortoise import Model, fields
 from tortoise.exceptions import DoesNotExist
 
-password_hasher = PasswordHasher()
-
 
 @unique
 class Permission(Enum):
@@ -133,7 +131,7 @@ class User(Model):
         except DoesNotExist:
             raise AuthenticationFailed("用户名或密码不正确")
 
-    async def verify_password(self, password: str):
+    async def verify_password(self, password_hasher: PasswordHasher, password: str):
         try:
             password_hasher.verify(self.password, password)
             if password_hasher.check_needs_rehash(self.password):

@@ -5,6 +5,7 @@ import sys
 from asyncio import sleep
 
 import aiotieba
+from argon2 import PasswordHasher
 from environs import Env
 from sanic import Sanic, Request, response
 from sanic.log import LOGGING_CONFIG_DEFAULTS, logger
@@ -16,7 +17,7 @@ from tortoise.contrib.sanic import register_tortoise
 from core.exception import ArgException, err_rps
 from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse, scope_extender
 from core.manager import manager
-from core.models import User, Config, password_hasher, Permission, ForumUserPermission, ExecuteLog
+from core.models import User, Config, Permission, ForumUserPermission, ExecuteLog
 from core.utils import validate_password, get_modules, json
 
 LOG_FILE_PATH = "./log/server.log"
@@ -87,7 +88,7 @@ for plugin_name, plugin in plugins.items():
 
 
 @app.before_server_start
-async def init_server(_app):
+async def init_server(_app: Sanic):
     if (await Config.get_bool(key="first")) is None:
         await Config.set_config(key="first", v1=True)
 
@@ -97,6 +98,8 @@ async def init_server(_app):
             await _plugin.plugin.async_before_start()
         except Exception:
             pass
+
+    _app.shared_ctx.password_hasher = PasswordHasher()
 
 
 @app.on_request
@@ -128,7 +131,7 @@ async def first_login_api(rqt: Request):
             uid=user.user_id,
             tuid=user.tieba_uid,
             username=user.user_name,
-            password=password_hasher.hash(rqt.form.get('password')),
+            password=rqt.app.shared_ctx.password_hasher.hash(rqt.form.get('password')),
             BDUSS=rqt.form.get('BDUSS'),
             STOKEN=rqt.form.get('STOKEN'),
         )

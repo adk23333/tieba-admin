@@ -3,8 +3,9 @@ from sanic import Blueprint, Request
 from sanic.views import HTTPMethodView
 from sanic_jwt import protected, scoped, inject_user
 
+from .exception import ArgException
 from .models import ForumUserPermission, Permission, User
-from .utils import json, arg2user_info
+from .utils import json, arg2user_info, validate_password
 
 manager = Blueprint("manager")
 
@@ -37,11 +38,22 @@ class UserPermission(HTTPMethodView):
                 await ForumUserPermission.filter(user_id=user_info.user_id, fid=forum_id).delete()
                 await User.filter(uid=user_info.user_id).delete()
                 return json(f"已删除{user_info.user_name}")
+
             permission = await ForumUserPermission.filter(user_id=user_info.user_id, fid=forum_id).get_or_none()
             if not permission:
-                permission = await ForumUserPermission(user_id=user_info.user_id, fid=forum_id,
-                                                       permission=rqt.form.get("pm"), fname=rqt.form.get("forum"))
-                await User.create(uid=user_info.user_id, tuid=user_info.tieba_uid, username=user_info.user_name,
+                permission = await ForumUserPermission(user_id=user_info.user_id,
+                                                       fid=forum_id,
+                                                       permission=rqt.form.get("pm"),
+                                                       fname=rqt.form.get("forum"))
+                if rqt.form.get("password"):
+                    validate_password(rqt.form.get('password'))
+                    hash_password = rqt.app.shared_ctx.password_hasher.hash(rqt.form.get("password"))
+                else:
+                    hash_password = None
+                await User.create(uid=user_info.user_id,
+                                  tuid=user_info.tieba_uid,
+                                  username=user_info.user_name,
+                                  password=hash_password,
                                   master=user.uid)
 
             if permission.permission == Permission.Master.value or rqt.form.get("pm") == Permission.Master.value:
@@ -53,6 +65,8 @@ class UserPermission(HTTPMethodView):
             return json(data=await permission.to_dict())
         except ValueError:
             return json("没有该贴吧用户")
+        except ArgException as e:
+            return json(e.message, status_code=e.status_code)
 
 
 manager.add_route(UserPermission.as_view(), "/api/manager/user_pm")
