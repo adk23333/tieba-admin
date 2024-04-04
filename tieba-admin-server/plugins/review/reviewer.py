@@ -309,25 +309,22 @@ class Reviewer(Plugin):
 
         await self.get_fup()
 
-    def on_start(self):
+    async def on_start(self):
         logger.setLevel(self.kwargs["log_level"])
         logger.info("[Reviewer] running.")
 
-    async def async_start(self):
         self.kwargs["models"].append(self.review_model)
         await Tortoise.init(db_url=self.kwargs["db_url"],
                             modules={"models": self.kwargs["models"]})
         await Tortoise.generate_schemas()
         await self.get_fup()
 
-    async def async_running(self):
+    async def on_running(self):
         user: User = await self.FUP.user
         self.client = await Client(user.BDUSS, user.STOKEN).__aenter__()
 
         await asyncio.gather(*[self.run_with_client(self.client)])
 
-    async def async_stop(self):
+    async def on_stop(self):
         await Tortoise.close_connections()
-
-    def on_stop(self):
-        self.client.__aexit__()
+        await self.client.__aexit__()

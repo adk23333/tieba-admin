@@ -94,7 +94,6 @@ async def init_server(_app: Sanic):
 
     for _plugin in plugins.values():
         try:
-            _plugin.plugin.before_start()
             await _plugin.plugin.async_before_start()
         except Exception:
             pass
