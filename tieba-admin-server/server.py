@@ -161,7 +161,7 @@ class PluginsStatus(HTTPMethodView):
             plugin_work["status"] = True
             return json("已启动插件", plugin_work)
         elif status == "0" and plugin_work:
-            os.kill(plugin_work["pid"], signal.SIGTERM)
+            os.kill(plugin_work["pid"], signal.SIGINT)
             return json("已停止插件", {"status": False})
         elif status == "0" and not plugin_work:
             return json("插件未运行", {"status": False})
