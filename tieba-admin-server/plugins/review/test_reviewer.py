@@ -1,6 +1,6 @@
 import unittest
 
-from .checker import reviewer
+from .reviewer import Reviewer
 
 
 class MyTestCase(unittest.IsolatedAsyncioTestCase):
@@ -8,11 +8,13 @@ class MyTestCase(unittest.IsolatedAsyncioTestCase):
         super().__init__(method_name)
 
     async def test_run(self):
-        reviewer.kwargs["models"] = ["core.models"]
-        reviewer.review_model = "review.models"
-        reviewer.kwargs["db_url"] = "sqlite://../../.cache/db.sqlite"
-        await reviewer.async_start()
-        await reviewer.async_running()
+        reviewer = Reviewer()
+        reviewer.PLUGIN_MODEL = "review.models"
+        await reviewer._start_plugin_with_process(
+            db_url="sqlite://../../.cache/db.sqlite",
+            log_level="DEBUG",
+            models=["core.models", reviewer.PLUGIN_MODEL],
+        )
 
 
 if __name__ == '__main__':

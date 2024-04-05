@@ -32,6 +32,11 @@ if app.ctx.DB_URL.startswith("sqlite") and not os.path.exists(app.ctx.DB_URL.rep
 app.blueprint(manager)
 
 models = ['core.models']
+plugins = get_modules("./plugins")
+for plugin_name, plugin in plugins.items():
+    app.blueprint(plugin.bp)
+    if plugin.Plugin.PLUGIN_MODEL:
+        models.append(plugin.Plugin.PLUGIN_MODEL)
 
 if app.ctx.env.bool("DEV", False):
     logger.setLevel(logging.DEBUG)
@@ -44,14 +49,6 @@ Initialize(app, authenticate=authenticate,
            responses_class=JwtResponse,
            add_scopes_to_payload=scope_extender)
 
-plugins = get_modules("./plugins")
-for plugin_name, plugin in plugins.items():
-    app.blueprint(plugin.bp)
-    try:
-        models.append(plugin.models.__name__)
-    except AttributeError:
-        pass
-
 
 @app.before_server_start
 async def init_server(_app: Sanic):
@@ -59,11 +56,7 @@ async def init_server(_app: Sanic):
         await Config.set_config(key="first", v1=True)
 
     for _plugin in plugins.values():
-        try:
-            await _plugin.plugin.async_before_start()
-        except Exception:
-            pass
-
+        await _plugin.Plugin.init_plugin()
     _app.shared_ctx.password_hasher = PasswordHasher()
 
 
@@ -149,7 +142,7 @@ class PluginsStatus(HTTPMethodView):
         if status == "1" and plugin_work:
             return json("插件已在运行", {"status": True})
         elif status == "1" and not plugin_work:
-            rqt.app.m.manage(_plugin, plugins[_plugin].plugin.start_plugin_with_process,
+            rqt.app.m.manage(_plugin, plugins[_plugin].Plugin.start_plugin_with_process,
                              {
                                  "db_url": rqt.app.ctx.DB_URL,
                                  "log_level": logger.level,

@@ -1,150 +1,36 @@
 import asyncio
 import random
 from asyncio import sleep
-from enum import Enum
-from typing import Tuple, Callable, Dict, Literal, List, Union, Coroutine, Any
+from typing import Tuple, List
 
 from aiotieba import Client, PostSortType, logging
 from aiotieba.typing import Threads, Thread, Posts, Post, Comment
 from sanic.log import logger
-from tortoise import Tortoise
+from tortoise import Tortoise, connections, ConfigurationError
 
 from core.models import ForumUserPermission, User, Config, ExecuteType, Permission
-from core.plugin import Plugin
+from core.plugin import BasePlugin
 from . import execute
+from .checker import CheckMap, manager
 from .models import Forum as RForum
 from .models import Function as RFunction
 from .models import Post as RPost
 from .models import Thread as RThread
 
-CheckFunc = Callable[[Union[Thread, Post, Comment], Client], Coroutine[Any, Any, execute.Executor]]
-Check = Dict[Literal['function', 'kwargs'], Union[CheckFunc, Dict]]
-CheckMap = Dict[Literal['post', 'comment', 'thread'], List[Check]]
 
-
-class Level(Enum):
-    """
-    方便划分等级的魔法数字枚举
-    
-    Attributes:
-        ALL: {1-18}
-        LOW : {1-3}
-        MIDDLE : {4-9}
-        HIGH : {10-18}
-        LOW1 : {1-6}
-        MIDDLE2 : {7-12}
-        HIGH2 : {13-18}
-    """
-    ALL = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}
-    LOW = {1, 2, 3}
-    MIDDLE = {4, 5, 6, 7, 8, 9}
-    HIGH = {10, 11, 12, 13, 14, 15, 16, 17, 18}
-    LOW1 = {1, 2, 3, 4, 5, 6}
-    MIDDLE2 = {7, 8, 9, 10, 11, 12}
-    HIGH2 = {13, 14, 15, 16, 17, 18}
-
-    def __add__(self, other):
-        """
-        使这个类支持使用+符号合并
-        """
-        return self.value.add(other)
-
-
-class Reviewer(Plugin):
+class Reviewer(BasePlugin):
     """
     继承自Plugin基类
     """
+    PLUGIN_MODEL = "plugins.review.models"
 
-    def __init__(self):
-        super().__init__()
-        self.review_model = "plugins.review.models"
-        self.check_map: CheckMap = {'comment': [], 'post': [], 'thread': []}
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.check_map: CheckMap = manager.check_map
         self.client: Client = None
         self.FUP: ForumUserPermission = None
         self.no_exec = True
-        self.check_name_map = set()
-
-    def comment(self, description: str = None):
-        """
-        加载处理楼中楼的checker
-        Args:
-            description: 已废除的参数
-        """
-
-        def wrapper(func: CheckFunc):
-            self.check_name_map.add(func.__name__)
-            self.check_map['comment'].append({
-                'function': func,
-                'kwargs': {
-                    'description': description,
-                },
-            })
-            return func
-
-        return wrapper
-
-    def post(self, description: str = None):
-        """
-        加载处理楼层的checker
-        Args:
-            description: 已废除的参数
-        """
-
-        def wrapper(func: CheckFunc):
-            self.check_name_map.add(func.__name__)
-            self.check_map['post'].append({
-                'function': func,
-                'kwargs': {
-                    'description': description,
-                },
-            })
-            return func
-
-        return wrapper
-
-    def thread(self, description: str = None):
-        """
-        加载处理主题贴的checker
-        Args:
-            description: 已废除的参数
-        """
-
-        def wrapper(func: CheckFunc):
-            self.check_name_map.add(func.__name__)
-            self.check_map['thread'].append({
-                'function': func,
-                'kwargs': {
-                    'description': description,
-                },
-            })
-            return func
-
-        return wrapper
-
-    def route(self,
-              _type: List[Literal['thread', 'post', 'comment']],
-              description: str = None):
-        """
-        加载处理楼中楼/楼层/主题贴的checker
-        Args:
-            _type: 处理类型
-            description: 已废除的参数
-        """
-
-        def wrapper(func: CheckFunc):
-            self.check_name_map.add(func.__name__)
-            for __type in _type:
-                if not (__type == 'thread' or __type == 'post' or __type == 'comment'):
-                    raise TypeError
-                self.check_map[__type].append({
-                    'function': func,
-                    'kwargs': {
-                        'description': description,
-                    },
-                })
-            return func
-
-        return wrapper
+        self.check_name_map = manager.check_name_map
 
     async def check_threads(self, client: Client, fname: str):
         """
@@ -290,41 +176,41 @@ class Reviewer(Plugin):
             if not rf:
                 await RForum.create(fname=self.FUP.fname)
 
-    async def async_before_start(self):
+    @classmethod
+    async def init_plugin(cls):
         logging.set_logger(logger)
 
-        self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
-        if self.no_exec is None:
+        no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
+        if no_exec is None:
             await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
-            self.no_exec = True
 
-        await RFunction.filter(function__not_in=self.check_name_map).delete()
+        await RFunction.filter(function__not_in=manager.check_name_map).delete()
         old_name_map: List[str] = [i.function for i in (await RFunction.all())]
         func_list = []
 
-        for c in self.check_name_map:
+        for c in manager.check_name_map:
             if c not in old_name_map:
                 func_list.append(RFunction(function=c))
         await RFunction.bulk_create(func_list)
 
-        await self.get_fup()
-
     async def on_start(self):
-        logger.setLevel(self.kwargs["log_level"])
-        logger.info("[Reviewer] running.")
-
-        self.kwargs["models"].append(self.review_model)
+        logging.set_logger(logger)
         await Tortoise.init(db_url=self.kwargs["db_url"],
                             modules={"models": self.kwargs["models"]})
-        await Tortoise.generate_schemas()
+
+        self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
         await self.get_fup()
 
     async def on_running(self):
         user: User = await self.FUP.user
         self.client = await Client(user.BDUSS, user.STOKEN).__aenter__()
-
-        await asyncio.gather(*[self.run_with_client(self.client)])
+        await asyncio.gather(*[self.run_with_client(self.client)], return_exceptions=True)
 
     async def on_stop(self):
-        await Tortoise.close_connections()
-        await self.client.__aexit__()
+        try:
+            await connections.close_all()
+            await self.client.__aexit__()
+        except ConfigurationError:
+            pass
+        except AttributeError:
+            pass
