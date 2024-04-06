@@ -1,7 +1,12 @@
 ﻿import os
 import sys
 
+from sanic import Blueprint, Request
 from sanic.log import LOGGING_CONFIG_DEFAULTS
+from sanic_jwt import protected, scoped
+
+from core.models import Permission, ExecuteLog
+from core.utils import json
 
 if not os.path.exists('./log'):
     os.makedirs('./log')
@@ -36,3 +41,24 @@ LOGGING_CONFIG.update({
         },
     },
 })
+
+bp_log = Blueprint("log", url_prefix="/api/logs")
+
+
+@bp_log.get("/exec")
+@protected()
+@scoped(Permission.min(), False)
+async def get_log(rqt: Request):
+    try:
+        limit = int(rqt.args.get("limit", 20))
+
+        if limit > 50 or limit <= 0:
+            limit = 50
+        pn = int(rqt.args.get("pn", 1))
+        if pn < 1:
+            pn = 1
+    except (TypeError, ValueError):
+        return json("参数错误")
+    offset = (pn - 1) * limit
+    logs = await ExecuteLog.all().offset(offset).limit(limit)
+    return json(data={"items": [await log.to_dict() for log in logs], "total": await ExecuteLog.all().count()})

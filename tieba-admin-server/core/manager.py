@@ -7,7 +7,7 @@ from .exception import ArgException
 from .models import ForumUserPermission, Permission, User
 from .utils import json, arg2user_info, validate_password
 
-manager = Blueprint("manager", url_prefix="/api/manager")
+bp_manager = Blueprint("manager", url_prefix="/api/manager")
 
 
 class UserPermission(HTTPMethodView):
@@ -69,4 +69,4 @@ class UserPermission(HTTPMethodView):
             return json(e.message, status_code=e.status_code)
 
 
-manager.add_route(UserPermission.as_view(), "/user_pm")
+bp_manager.add_route(UserPermission.as_view(), "/user_pm")
