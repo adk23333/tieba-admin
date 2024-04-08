@@ -31,7 +31,7 @@ if app.ctx.DB_URL.startswith("sqlite") and not os.path.exists(app.ctx.DB_URL.rep
 
 models = ['core.models']
 plugins = get_modules("./plugins")
-for plugin_name, plugin in plugins.items():
+for plugin in plugins.values():
     app.blueprint(plugin.bp)
     if plugin.Plugin.PLUGIN_MODEL:
         models.append(plugin.Plugin.PLUGIN_MODEL)
