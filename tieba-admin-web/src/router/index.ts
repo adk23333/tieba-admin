@@ -42,6 +42,10 @@ const routes = [
   {
     path: '/first_login',
     component: FirstLoginVue
+  },
+  {
+    path: '/:catchAll(.*)',
+    component: () => import('@/pages/404.vue')
   }
 ]
 

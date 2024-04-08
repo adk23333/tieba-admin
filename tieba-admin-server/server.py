@@ -6,8 +6,9 @@ from asyncio import sleep
 import aiotieba
 from argon2 import PasswordHasher
 from environs import Env
-from sanic import Sanic, Request
+from sanic import Sanic, Request, FileNotFound
 from sanic.log import logger
+from sanic.response import file
 from sanic.views import HTTPMethodView
 from sanic_ext import Extend
 from sanic_jwt import Initialize, protected, scoped
@@ -119,6 +120,12 @@ class PluginsStatus(HTTPMethodView):
 
 
 app.add_route(PluginsStatus.as_view(), "/api/plugins/status")
+
+
+@app.exception([FileNotFound])
+async def file_not_found(rqt: Request, e: FileNotFound):
+    return await file("./web/index.html", status=404)
+
 
 if app.ctx.env.bool("WEB", True):
     app.static("/", "./web/", index="index.html")
