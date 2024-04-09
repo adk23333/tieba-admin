@@ -44,7 +44,7 @@
 - **:star:docker**
 
   ```shell
-  docker push adk23333/tieba-admin:latest
+  docker pull adk23333/tieba-admin:latest
   ```
   
   建议将.cache与log目录共享到宿主机，例如
