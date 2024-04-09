@@ -204,7 +204,7 @@ class Reviewer(BasePlugin):
     async def on_running(self):
         user: User = await self.FUP.user
         self.client = await Client(user.BDUSS, user.STOKEN).__aenter__()
-        await asyncio.gather(*[self.run_with_client(self.client)], return_exceptions=True)
+        await asyncio.gather(*[self.run_with_client(self.client)])
 
     async def on_stop(self):
         try:
