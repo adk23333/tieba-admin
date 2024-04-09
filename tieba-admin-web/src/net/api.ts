@@ -16,7 +16,7 @@ export const get_self_info = () => {
 
 export const register_top_admin = (data: object) => {
   return serviceAxios({
-    url: "/first_login",
+    url: "/auth/first_login",
     method: "post",
     data: data,
   });
@@ -24,7 +24,7 @@ export const register_top_admin = (data: object) => {
 
 export const get_portrait = () => {
   return serviceAxios.get(
-    "/self/portrait"
+    "/auth/portrait"
   )
 }
 

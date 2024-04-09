@@ -14,7 +14,7 @@ from sanic_ext import Extend
 from sanic_jwt import Initialize, protected, scoped
 from tortoise.contrib.sanic import register_tortoise
 
-from core.home import bp_home
+from core.account import bp_account
 from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse, scope_extender
 from core.log import LOGGING_CONFIG, bp_log
 from core.manager import bp_manager
@@ -50,7 +50,7 @@ Initialize(app, authenticate=authenticate,
 
 app.blueprint(bp_manager)
 app.blueprint(bp_log)
-app.blueprint(bp_home)
+app.blueprint(bp_account)
 
 
 @app.before_server_start

@@ -6,10 +6,10 @@ from core.exception import ArgException
 from core.models import Permission, User, Config, ForumUserPermission
 from core.utils import json, validate_password
 
-bp_home = Blueprint("home")
+bp_account = Blueprint("account", url_prefix="/api/auth")
 
 
-@bp_home.get("/api/self/portrait")
+@bp_account.get("/portrait")
 @inject_user()
 @protected()
 @scoped(Permission.min(), False)
@@ -22,20 +22,20 @@ async def get_portrait(rqt: Request, user: User):
     return json(data=_user.portrait)
 
 
-@bp_home.before_server_start
+@bp_account.before_server_start
 async def init_server(_app: Sanic):
     if (await Config.get_bool(key="first")) is None:
         await Config.set_config(key="first", v1=True)
 
 
-@bp_home.on_request
+@bp_account.on_request
 async def first_login_check(rqt: Request):
     is_first = await Config.get_bool(key="first")
-    if is_first and rqt.path != '/api/first_login' and rqt.path.startswith("/api"):
+    if is_first and rqt.path != '/api/auth/first_login' and rqt.path.startswith("/api"):
         return response.json({"is_first": True}, 403)
 
 
-@bp_home.post('/api/first_login')
+@bp_account.post('/first_login')
 async def first_login_api(rqt: Request):
     """第一次登录接口
 
