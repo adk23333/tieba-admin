@@ -139,7 +139,7 @@ async def check_keyword(t: Union[Thread, Post, Comment], client: Client):
     if t.user.level in Level.LOW.value:
         keywords = await Keyword.all()
         for kw in keywords:
-            if re.search(kw.keyword, t.text):
+            if re.search(fr"[{kw.keyword}]", t.text):
                 return delete(client, t)
     return empty()
 
