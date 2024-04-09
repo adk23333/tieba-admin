@@ -16,7 +16,7 @@ export const get_self_info = () => {
 
 export const register_top_admin = (data: object) => {
   return serviceAxios({
-    url: "/first_login",
+    url: "/auth/first_login",
     method: "post",
     data: data,
   });
@@ -24,7 +24,7 @@ export const register_top_admin = (data: object) => {
 
 export const get_portrait = () => {
   return serviceAxios.get(
-    "/self/portrait"
+    "/auth/portrait"
   )
 }
 
@@ -153,14 +153,24 @@ export const get_users = () => {
   return serviceAxios.get("/manager/user_pm")
 }
 
-export const set_users = (user: string, forum: string, pm: string, del: number = 0) => {
+export const set_users = (user: string, forum: string, pm: string, del: number = 0, password: string | null = null) => {
   return serviceAxios.postForm(
     "/manager/user_pm",
     {
       user: user,
       forum: forum,
       pm: pm,
-      del: del
+      del: del,
+      password: password
+    }
+  )
+}
+
+export const change_password = (password: string) => {
+  return serviceAxios.postForm(
+    "/auth/change_pwd",
+    {
+      password: password
     }
   )
 }

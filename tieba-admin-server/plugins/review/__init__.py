@@ -1,2 +1,2 @@
 from .buleprint import bp
-from .checker import reviewer as plugin
+from .reviewer import Reviewer as Plugin

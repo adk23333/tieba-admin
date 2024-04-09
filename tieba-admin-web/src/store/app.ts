@@ -36,6 +36,9 @@ export const useAppStore = defineStore('app', {
       this.user.username = object.username
       this.user.permission = object.permission
     },
+    exit() {
+      this.user.token = ""
+    },
   },
   persist: {
     storage: window.localStorage,

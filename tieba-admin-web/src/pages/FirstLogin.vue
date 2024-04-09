@@ -5,77 +5,77 @@
         注册管理员
       </v-card-title>
       <v-form
-        v-model="form"
-        @submit.prevent="submit"
+          v-model="form"
+          @submit.prevent="submit"
       >
         <v-text-field
-          density="compact"
-          variant="outlined"
-          v-model="user.BDUSS"
-          :readonly="loading"
-          :rules="[rules.required]"
-          class="mb-2"
-          label="BDUSS"
+            density="compact"
+            variant="outlined"
+            v-model="user.BDUSS"
+            :readonly="loading"
+            :rules="[rules.required]"
+            class="mb-2"
+            label="BDUSS"
 
         ></v-text-field>
 
         <v-text-field
-          density="compact"
-          variant="outlined"
-          v-model="user.STOKEN"
-          :readonly="loading"
-          :rules="[rules.required]"
-          class="mb-2"
-          label="STOKEN"
+            density="compact"
+            variant="outlined"
+            v-model="user.STOKEN"
+            :readonly="loading"
+            :rules="[rules.required]"
+            class="mb-2"
+            label="STOKEN"
 
         ></v-text-field>
 
         <v-text-field
-          density="compact"
-          variant="outlined"
-          v-model="user.fname"
-          :readonly="loading"
-          :rules="[rules.required]"
-          class="mb-2"
-          label="贴吧吧名"
+            density="compact"
+            variant="outlined"
+            v-model="user.fname"
+            :readonly="loading"
+            :rules="[rules.required]"
+            class="mb-2"
+            label="贴吧吧名"
 
         ></v-text-field>
 
         <v-text-field
-          class="mt-2"
-          density="compact"
-          variant="outlined"
-          v-model="user.password"
-          :readonly="loading"
-          :append-inner-icon="visible1 ? 'mdi-eye-off' : 'mdi-eye'"
-          :type="visible1 ? 'text' : 'password'"
-          @click:append-inner="visible1 = !visible1"
-          :rules="[rules.required, rules.passwordMatch, rules.min, rules.max]"
-          label="密码"
+            class="mt-2"
+            density="compact"
+            variant="outlined"
+            v-model="user.password"
+            :readonly="loading"
+            :append-inner-icon="visible1 ? 'mdi-eye-off' : 'mdi-eye'"
+            :type="visible1 ? 'text' : 'password'"
+            @click:append-inner="visible1 = !visible1"
+            :rules="[rules.required, rules.passwordMatch, rules.min, rules.max]"
+            label="密码"
         ></v-text-field>
 
         <v-text-field
-          class="mt-2"
-          density="compact"
-          variant="outlined"
-          v-model="password2"
-          :readonly="loading"
-          :append-inner-icon="visible2 ? 'mdi-eye-off' : 'mdi-eye'"
-          :type="visible2 ? 'text' : 'password'"
-          @click:append-inner="visible2 = !visible2"
-          :rules="[rules.required, pwd_fmt]"
-          label="再次输入密码"
+            class="mt-2"
+            density="compact"
+            variant="outlined"
+            v-model="password2"
+            :readonly="loading"
+            :append-inner-icon="visible2 ? 'mdi-eye-off' : 'mdi-eye'"
+            :type="visible2 ? 'text' : 'password'"
+            @click:append-inner="visible2 = !visible2"
+            :rules="[rules.required, pwd_fmt]"
+            label="再次输入密码"
         ></v-text-field>
 
         <br>
 
         <v-btn
-          :disabled="!form"
-          :loading="loading"
-          block
-          color="success"
-          size="large"
-          type="submit"
+            :disabled="!form"
+            :loading="loading"
+            block
+            color="green"
+            size="large"
+            type="submit"
         >
           登录
         </v-btn>
@@ -114,13 +114,13 @@ const visible1 = ref(false)
 const visible2 = ref(false)
 
 function submit() {
+  loading.value = true
   register_top_admin(user).then((res) => {
+    loading.value = false
     message.success(res.data.msg)
     setTimeout(() => {
       router.push('/profile')
     }, 3000)
-  }).catch((err) => {
-    message.error(err.data.msg)
   })
 }
 

@@ -4,4 +4,6 @@ export const rules = {
   passwordMatch: (v: any) => /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!/]).*$/g.test(v) || '必须包含大小写字母、数字和特殊字符',
   min: (v: any) => v.length >= 8 || '最少8位',
   max: (v: any) => v.length <= 32 || '最多32位',
+  passwordMatchNullable: (v: any) => v == "" || rules.passwordMatch(v),
+  minNullable: (v: any) => v.length == 0 || rules.min(v),
 }
