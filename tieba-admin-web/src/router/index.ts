@@ -10,8 +10,9 @@ import ProfileVue from '@/pages/Profile.vue'
 import LogcatVue from '@/pages/Logcat.vue'
 import ManagerVue from '@/pages/Manager.vue'
 import {createRouter, createWebHistory} from 'vue-router'
-import LoginVue from "@/pages/Login.vue";
-import FirstLoginVue from "@/pages/FirstLogin.vue";
+import LoginVue from "@/pages/Login.vue"
+import FirstLoginVue from "@/pages/FirstLogin.vue"
+import AccountVue from "@/pages/Account.vue"
 
 
 const routes = [
@@ -34,6 +35,10 @@ const routes = [
   {
     path: '/manager',
     component: ManagerVue
+  },
+  {
+    path: '/account',
+    component: AccountVue
   },
   {
     path: '/login',

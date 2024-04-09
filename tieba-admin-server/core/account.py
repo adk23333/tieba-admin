@@ -71,3 +71,20 @@ async def first_login_api(rqt: Request):
         return response.json({"status": 200, "msg": "成功创建超级管理员"})
     except ArgException as err:
         return json(err.message, status_code=err.status_code)
+
+
+@bp_account.post("/change_pwd")
+@inject_user()
+@protected()
+@scoped(Permission.ordinary(), False)
+async def change_password(rqt: Request, user: User):
+    if not rqt.form.get("password"):
+        return json("参数错误", status_code=400)
+
+    try:
+        validate_password(rqt.form.get("password"))
+        user.password = rqt.app.shared_ctx.password_hasher.hash(rqt.form.get('password'))
+        await user.save()
+        return json("修改密码成功")
+    except ArgException as e:
+        return json(e.message, status_code=e.status_code)

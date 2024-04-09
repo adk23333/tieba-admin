@@ -165,3 +165,12 @@ export const set_users = (user: string, forum: string, pm: string, del: number =
     }
   )
 }
+
+export const change_password = (password: string) => {
+  return serviceAxios.postForm(
+    "/auth/change_pwd",
+    {
+      password: password
+    }
+  )
+}
