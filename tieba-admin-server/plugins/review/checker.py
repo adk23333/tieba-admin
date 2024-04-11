@@ -1,4 +1,3 @@
-import re
 from enum import Enum
 from typing import Union, Callable, Coroutine, Dict, Any, Literal, List
 
@@ -139,7 +138,7 @@ async def check_keyword(t: Union[Thread, Post, Comment], client: Client):
     if t.user.level in Level.LOW.value:
         keywords = await Keyword.all()
         for kw in keywords:
-            if re.search(fr"[{kw.keyword}]", t.text):
+            if t.text.find(kw.keyword) != -1:
                 return delete(client, t)
     return empty()
 
