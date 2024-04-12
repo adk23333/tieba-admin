@@ -78,6 +78,10 @@ async def first_login_api(rqt: Request):
 @protected()
 @scoped(Permission.ordinary(), False)
 async def change_password(rqt: Request, user: User):
+    """用于修改自己密码的接口
+
+
+    """
     if not rqt.form.get("password"):
         return json("参数错误", status_code=400)
 
