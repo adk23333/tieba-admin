@@ -11,6 +11,7 @@ interface User {
 export const useAppStore = defineStore('app', {
   state: () => ({
     title: '概览',
+    is_login: false,
     user: {
       token: '',
       uid: 0,
@@ -29,6 +30,7 @@ export const useAppStore = defineStore('app', {
     },
     set_token_access(token: string) {
       this.user.token = 'Bearer ' + token
+      this.is_login = true
     },
     set_user(object: User) {
       this.user.uid = object.uid
@@ -38,6 +40,11 @@ export const useAppStore = defineStore('app', {
     },
     exit() {
       this.user.token = ""
+      this.user.uid = 0
+      this.user.tuid = 0
+      this.user.username = ""
+      this.user.permission = ""
+      this.is_login = false
     },
   },
   persist: {
