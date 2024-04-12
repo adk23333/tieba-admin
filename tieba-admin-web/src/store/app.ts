@@ -11,12 +11,13 @@ interface User {
 export const useAppStore = defineStore('app', {
   state: () => ({
     title: '概览',
+    is_login: false,
     user: {
       token: '',
       uid: 0,
       tuid: 0,
       username: '',
-      permission: '',
+      portrait: '',
     }
   }),
   actions: {
@@ -29,19 +30,27 @@ export const useAppStore = defineStore('app', {
     },
     set_token_access(token: string) {
       this.user.token = 'Bearer ' + token
+      this.is_login = true
     },
     set_user(object: User) {
       this.user.uid = object.uid
       this.user.tuid = object.tuid
       this.user.username = object.username
-      this.user.permission = object.permission
     },
     exit() {
       this.user.token = ""
+      this.user.uid = 0
+      this.user.tuid = 0
+      this.user.username = ""
+      this.is_login = false
+      this.user.portrait = ""
     },
+    set_portrait(portrait: string) {
+      this.user.portrait = portrait
+    }
   },
   persist: {
     storage: window.localStorage,
-    paths: ['user.token']
+    paths: ['user', 'is_login']
   }
 })

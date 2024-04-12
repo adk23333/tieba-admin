@@ -110,6 +110,19 @@ class Executor(object):
         elif exec2.option == self.option and exec2.opt_day > self.opt_day:
             self.opt_day = exec2.opt_day
 
+    def __str__(self):
+        return str(self.__dict__)
+
+    @property
+    def __dict__(self):
+        return {
+            "obj": self.obj.__dict__,
+            "user_opt": self.user_opt.name,
+            "option": self.option.name,
+            "user_day": self.user_day,
+            "opt_day": self.opt_day
+        }
+
 
 def empty():
     """

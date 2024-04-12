@@ -1,4 +1,3 @@
-import re
 from enum import Enum
 from typing import Union, Callable, Coroutine, Dict, Any, Literal, List
 
@@ -139,7 +138,7 @@ async def check_keyword(t: Union[Thread, Post, Comment], client: Client):
     if t.user.level in Level.LOW.value:
         keywords = await Keyword.all()
         for kw in keywords:
-            if re.search(kw.keyword, t.text):
+            if t.text.find(kw.keyword) != -1:
                 return delete(client, t)
     return empty()
 
@@ -152,8 +151,17 @@ async def check_black(t: Union[Thread, Post, Comment], client: Client):
     return empty()
 
 
-@manager.thread()
-async def ban_low_user(thread: Thread, client: Client):
-    if thread.user.level == 1:
+def _level_wall(level: int, thread: Thread, client: Client):
+    if thread.user.level == level:
         return delete(client, thread)
     return empty()
+
+
+@manager.thread()
+async def level_wall_1(thread: Thread, client: Client):
+    return _level_wall(1, thread, client)
+
+
+@manager.thread()
+async def level_wall_3(thread: Thread, client: Client):
+    return _level_wall(3, thread, client)

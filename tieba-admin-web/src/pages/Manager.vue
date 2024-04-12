@@ -117,7 +117,7 @@ function submit(del = 0) {
 
 </script>
 
-<style>
+<style scoped>
 .min-width {
   min-width: 260px;
 }

@@ -7,24 +7,23 @@
       </v-toolbar>
       <v-container>
         <v-navigation-drawer
-            mobile-breakpoint="sm"
-            v-model="drawer"
-            expand-on-hover rail width="260">
+          mobile-breakpoint="sm"
+          v-model="drawer"
+          expand-on-hover rail width="260">
           <v-list class="py-0">
-            <v-list-item :prepend-avatar="select_info[0][2]"
+            <v-list-item :prepend-avatar="select_info[0].icon"
                          :title="user.username"
-                         :subtitle="user.permission"
-                         :to="'/'+select_info[0][0]"/>
+                         :to="'/'+select_info[0].uri"/>
           </v-list>
           <v-divider></v-divider>
 
           <v-list density="compact" nav>
             <v-list-item v-for="i in select_info.slice(1)"
-                         :prepend-icon="i[2]"
-                         :title="i[1]"
-                         :value="i[0]"
-                         :key="i[0]"
-                         :to="'/'+i[0]"></v-list-item>
+                         :prepend-icon="i.icon"
+                         :title="i.title"
+                         :value="i.uri"
+                         :key="i.uri"
+                         :to="'/'+i.uri"></v-list-item>
           </v-list>
           <template v-slot:append>
             <div class="pa-2">
@@ -49,7 +48,7 @@
 }
 </style>
 <script lang="ts" setup>
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import {useAppStore} from "@/store/app";
 import {storeToRefs} from "pinia";
 import {get_portrait} from "@/net/api";
@@ -57,26 +56,44 @@ import router from "@/router";
 
 const store = useAppStore()
 
-const select_info = ref([
-  ["profile", "概览", ""],
-  ["modules", "功能管理", "mdi-pencil"],
-  ["logcat", "操作日志", "mdi-history"],
-  ["manager", "成员管理", "mdi-account-cog"],
-  ["account", "个人中心", "mdi-home-account"]
+interface SelectInfo {
+  uri: string
+  title: string
+  icon: string
+}
+
+const select_info = ref<SelectInfo[]>([
+  {uri: "profile", title: "概览", icon: ""},
+  {uri: "modules", title: "功能管理", icon: "mdi-pencil"},
+  {uri: "logcat", title: "操作日志", icon: "mdi-history"},
+  {uri: "manager", title: "成员管理", icon: "mdi-account-cog"},
+  {uri: "account", title: "个人中心", icon: "mdi-home-account"}
 ])
 const drawer = ref(true)
-const {user} = storeToRefs(store)
-const {title} = storeToRefs(store)
+const {user, title} = storeToRefs(store)
 
 function exit() {
   store.exit()
-  router.push("/")
+  router.push("/login")
 }
 
 onMounted(() => {
-  get_portrait().then((res) => {
-    select_info.value[0][2] = "https://gss0.bdstatic.com/6LZ1dD3d1sgCo2Kml5_Y_D3/sys/portrait/item/" + res.data.data
-  })
+  set_portrait2icon()
 })
 
+watch(() => store.is_login, (nv, ov) => {
+  if (nv) {
+    get_portrait().then((res) => {
+      store.set_portrait(res.data.data)
+      set_portrait2icon()
+    })
+  } else {
+    select_info.value[0].icon = ""
+  }
+})
+
+function set_portrait2icon() {
+  select_info.value[0].icon = `http://tb.himg.baidu.com/sys/portraitn/item/${
+    store.user.portrait}?t=${Math.floor(Date.now() / 1000)}`
+}
 </script>

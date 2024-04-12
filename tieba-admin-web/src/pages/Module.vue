@@ -87,4 +87,8 @@ onMounted(() => {
 })
 </script>
 
-<style></style>
+<style scoped>
+.v-switch.v-input {
+  flex: 1 0 auto;
+}
+</style>
