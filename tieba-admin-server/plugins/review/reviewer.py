@@ -1,14 +1,14 @@
 import asyncio
 import random
 from asyncio import sleep
-from typing import Tuple, List
+from typing import List
 
 from aiotieba import Client, PostSortType, logging
-from aiotieba.typing import Threads, Thread, Posts, Post, Comment
+from aiotieba.typing import Threads, Thread, Posts, Post, Comments, Comment
 from sanic.log import logger
 from tortoise import Tortoise, connections, ConfigurationError
 
-from core.models import ForumUserPermission, User, Config, ExecuteType, Permission
+from core.models import ForumUserPermission, User, Config, Permission
 from core.plugin import BasePlugin
 from . import execute
 from .checker import CheckMap, manager
@@ -31,6 +31,7 @@ class Reviewer(BasePlugin):
         self.FUP: ForumUserPermission = None
         self.no_exec = True
         self.check_name_map = manager.check_name_map
+        self.semaphore = asyncio.Semaphore(8)
 
     async def check_threads(self, client: Client, fname: str):
         """
@@ -40,42 +41,49 @@ class Reviewer(BasePlugin):
             fname: 贴吧名
 
         """
-        threads: List[Tuple[Thread, bool]] = []
-        origin_threads: Threads = await client.get_threads(fname)
+        async with self.semaphore:
+            first_threads: Threads = await client.get_threads(fname)
 
-        for thread in origin_threads:
-            prev_thread = await RThread.filter(tid=thread.tid).get_or_none()
-            if prev_thread:
-                if thread.last_time < prev_thread.last_time:
-                    await RThread.filter(tid=thread.tid).update(last_time=thread.last_time)
-                elif thread.last_time > prev_thread.last_time:
-                    threads.append((thread, True))
-                    await RThread.filter(tid=thread.tid).update(last_time=thread.last_time)
-            else:
-                threads.append((thread, False))
-                await RThread.create(tid=thread.tid, fid=await client.get_fid(fname), last_time=thread.last_time)
+        need_next_check: List[Thread] = []
 
-        need_check_post: List[Thread] = []
-        for thread, checked in threads:
-            executor = execute.Executor(client=client, obj=thread)
-            if not checked:
-                for check in self.check_map['thread']:
-                    func_enable = await RFunction.get(function=check['function'].__name__)
-                    if not func_enable.enable:
-                        continue
-                    _executor = await check['function'](thread, client)
-                    if not _executor:
-                        raise TypeError("Need to return Executor object")
-                    executor.exec_compare(_executor)
+        async def check_and_execute(ce_thread: Thread):
+            executor = execute.Executor(client=client, obj=ce_thread)
 
-            if executor.option != ExecuteType.ThreadDelete:
-                need_check_post.append(thread)
+            async def get_execute(_check):
+                func_enable = await RFunction.get(function=_check['function'].__name__)
+                if not func_enable.enable:
+                    return None
+                _executor = await _check['function'](ce_thread, client)
+                if not _executor:
+                    raise TypeError("Need to return Executor object")
+                executor.exec_compare(_executor)
+
+            await asyncio.gather(*[get_execute(check) for check in self.check_map['thread']])
 
             if not self.no_exec:
                 await executor.run()
+            else:
+                logger.debug(f"[review] {executor}")
 
-        for thread in need_check_post:
-            await self.check_posts(client, thread.tid)
+        async def check_last_time(clt_thread: Thread):
+            if clt_thread.is_livepost:
+                return None
+            prev_thread = await RThread.filter(tid=clt_thread.tid).get_or_none()
+            if prev_thread:
+                if clt_thread.last_time < prev_thread.last_time:
+                    await RThread.filter(tid=clt_thread.tid).update(last_time=clt_thread.last_time)
+                elif clt_thread.last_time > prev_thread.last_time:
+                    need_next_check.append(clt_thread)
+                    await RThread.filter(tid=clt_thread.tid).update(last_time=clt_thread.last_time)
+            else:
+                need_next_check.append(clt_thread)
+                await check_and_execute(clt_thread)
+                await RThread.create(tid=clt_thread.tid, fid=await client.get_fid(fname),
+                                     last_time=clt_thread.last_time)
+
+        await asyncio.gather(*[check_last_time(thread) for thread in first_threads])
+
+        await asyncio.gather(*[self.check_posts(client, thread.tid) for thread in need_next_check])
 
     async def check_posts(self, client: Client, tid: int):
         """
@@ -84,73 +92,136 @@ class Reviewer(BasePlugin):
             client: 传入了执行账号的贴吧客户端
             tid: 所在主题贴id
         """
-        posts: List[Tuple[Post, bool]] = []
-        last_posts: Posts = await client.get_posts(tid, sort=PostSortType.DESC)
-        for post in last_posts:
-            prev_post = await RPost.filter(pid=post.pid).get_or_none()
-            if prev_post:
-                if post.reply_num < prev_post.reply_num:
-                    await RPost.filter(pid=post.pid).update(reply_num=post.reply_num)
-                elif post.reply_num > prev_post.reply_num:
-                    posts.append((post, True))
-                    await RPost.filter(pid=post.pid).update(reply_num=post.reply_num)
+        async with self.semaphore:
+            last_posts: Posts = await client.get_posts(
+                tid,
+                pn=0xFFFF,
+                sort=PostSortType.DESC,
+                with_comments=True,
+                comment_rn=10
+            )
+
+        if last_posts and last_posts[-1].floor != 1:
+            last_floor = last_posts[0].floor
+            need_rn = last_floor - len(last_posts)
+            if need_rn > 0:
+                post_set = set(last_posts.objs)
+                rn_clamp = 30
+                if need_rn <= rn_clamp:
+                    async with self.semaphore:
+                        first_posts = await client.get_posts(
+                            tid, rn=need_rn, with_comments=True, comment_rn=10
+                        )
+
+                    post_set.update(first_posts.objs)
+                else:
+                    async with self.semaphore:
+                        first_posts = await client.get_posts(
+                            tid, rn=rn_clamp, with_comments=True, comment_rn=10
+                        )
+
+                    post_set.update(first_posts.objs)
+
+                    async with self.semaphore:
+                        hot_posts = await client.get_posts(
+                            tid, sort=PostSortType.HOT, with_comments=True, comment_rn=10
+                        )
+
+                    post_set.update(hot_posts.objs)
+                posts = list(post_set)
             else:
-                posts.append((post, False))
-                await RPost.create(pid=post.pid, tid=tid, reply_num=post.reply_num)
+                posts = last_posts.objs
+        else:
+            posts = last_posts.objs
 
-        need_check_comment: List[Post] = []
-        for post, checked in posts:
-            executor = execute.Executor(client=client, obj=post)
-            if not checked:
-                for check in self.check_map['post']:
-                    func_enable = await RFunction.get(function=check['function'].__name__)
-                    if not func_enable.enable:
-                        continue
-                    _executor = await check['function'](post, client)
-                    if not _executor:
-                        raise TypeError("Need to return Executor object")
-                    executor.exec_compare(_executor)
+        need_next_check: List[Post] = []
 
-            if executor.option != ExecuteType.PostDelete:
-                need_check_comment.append(post)
+        async def check_and_execute(ce_post: Post):
+            executor = execute.Executor(client=client, obj=ce_post)
 
-            if not self.no_exec:
-                await executor.run()
-
-        for post in need_check_comment:
-            await self.check_comment(client, post.pid, post.tid)
-
-    async def check_comment(self, client: Client, pid: int, tid: int):
-        """
-        检查楼中楼内容
-        Args:
-            client: 传入了执行账号的贴吧客户端
-            pid: 楼层id
-            tid: 主题贴id
-        """
-        comments: List[Comment] = []
-        count = 1
-        while origin_comments := await client.get_comments(tid, pid, pn=count):
-            for comment in origin_comments:
-                prev_comment = await RPost.filter(pid=comment.pid).get_or_none()
-                if not prev_comment:
-                    comments.append(comment)
-                    await RPost.create(pid=comment.pid, tid=comment.tid, ppid=pid)
-            count += 1
-
-        for comment in comments:
-            executor = execute.Executor(client=client, obj=comment)
-            for check in self.check_map['comment']:
-                func_enable = await RFunction.get(function=check['function'].__name__)
+            async def get_execute(_check):
+                func_enable = await RFunction.get(function=_check['function'].__name__)
                 if not func_enable.enable:
-                    continue
-                _executor = await check['function'](comment, client)
+                    return None
+                _executor = await _check['function'](ce_post, client)
                 if not _executor:
                     raise TypeError("Need to return Executor object")
                 executor.exec_compare(_executor)
 
+            await asyncio.gather(*[get_execute(check) for check in self.check_map['post']])
+
             if not self.no_exec:
                 await executor.run()
+            else:
+                logger.debug(f"[review] {executor}")
+
+        async def check_reply_num(crn_post: Post):
+            prev_post = await RPost.filter(pid=crn_post.pid).get_or_none()
+            if prev_post:
+                if crn_post.reply_num < prev_post.reply_num:
+                    await RPost.filter(pid=crn_post.pid).update(reply_num=crn_post.reply_num)
+                elif crn_post.reply_num > prev_post.reply_num:
+                    need_next_check.append(crn_post)
+                    await RPost.filter(pid=crn_post.pid).update(reply_num=crn_post.reply_num)
+            else:
+                need_next_check.append(crn_post)
+                await check_and_execute(crn_post)
+                await RPost.create(pid=crn_post.pid, tid=tid, reply_num=crn_post.reply_num)
+
+        await asyncio.gather(*[check_reply_num(post) for post in posts])
+
+        await asyncio.gather(
+            *[self.check_comment(client, post) for post in need_next_check]
+        )
+
+    async def check_comment(self, client: Client, post: Post):
+        """
+        检查楼中楼内容
+        Args:
+            client: 传入了执行账号的贴吧客户端
+            post: 楼层
+        """
+
+        if post.reply_num > 10 or \
+                (len(post.comments) != post.reply_num and post.reply_num <= 10):
+
+            async with self.semaphore:
+                last_comments: Comments = await client.get_comments(
+                    post.tid, post.pid, pn=post.reply_num // 30 + 1
+                )
+
+            comment_set = set(post.comments)
+            comment_set.update(last_comments.objs)
+            comments = list(comment_set)
+        else:
+            comments = post.comments
+
+        async def check_and_execute(cae_comment: Comment):
+            executor = execute.Executor(client=client, obj=cae_comment)
+
+            async def get_execute(_check):
+                func_enable = await RFunction.get(function=_check['function'].__name__)
+                if not func_enable.enable:
+                    return None
+                _executor = await _check['function'](cae_comment, client)
+                if not _executor:
+                    raise TypeError("Need to return Executor object")
+                executor.exec_compare(_executor)
+
+            await asyncio.gather(*[get_execute(check) for check in self.check_map['comment']])
+
+            if not self.no_exec:
+                await executor.run()
+            else:
+                logger.debug(f"[review] {executor}")
+
+        async def check_comment_of_db(ccod_comment: Comment):
+            prev_comment = await RPost.filter(pid=ccod_comment.pid).get_or_none()
+            if not prev_comment:
+                await check_and_execute(ccod_comment)
+                await RPost.create(pid=ccod_comment.pid, tid=ccod_comment.tid, ppid=post.pid)
+
+        await asyncio.gather(*[check_comment_of_db(comment) for comment in comments])
 
     async def run_with_client(self, client: Client, min_time=10.0, max_time=20.0):
         """
@@ -197,6 +268,7 @@ class Reviewer(BasePlugin):
         logging.set_logger(logger)
         await Tortoise.init(db_url=self.kwargs["db_url"],
                             modules={"models": self.kwargs["models"]})
+        await Tortoise.generate_schemas()
 
         self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
         await self.get_fup()
@@ -204,7 +276,7 @@ class Reviewer(BasePlugin):
     async def on_running(self):
         user: User = await self.FUP.user
         self.client = await Client(user.BDUSS, user.STOKEN).__aenter__()
-        await asyncio.gather(*[self.run_with_client(self.client)])
+        await asyncio.gather(self.run_with_client(self.client))
 
     async def on_stop(self):
         try:
