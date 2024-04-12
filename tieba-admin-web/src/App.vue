@@ -13,7 +13,6 @@
           <v-list class="py-0">
             <v-list-item :prepend-avatar="select_info[0].icon"
                          :title="user.username"
-                         :subtitle="user.permission"
                          :to="'/'+select_info[0].uri"/>
           </v-list>
           <v-divider></v-divider>
@@ -49,7 +48,7 @@
 }
 </style>
 <script lang="ts" setup>
-import {ref, watch} from "vue";
+import {onMounted, ref, watch} from "vue";
 import {useAppStore} from "@/store/app";
 import {storeToRefs} from "pinia";
 import {get_portrait} from "@/net/api";
@@ -78,14 +77,23 @@ function exit() {
   router.push("/login")
 }
 
+onMounted(() => {
+  set_portrait2icon()
+})
+
 watch(() => store.is_login, (nv, ov) => {
   if (nv) {
     get_portrait().then((res) => {
-      select_info.value[0].icon = `http://tb.himg.baidu.com/sys/portraitn/item/${
-        res.data.data}?t=${Math.floor(Date.now() / 1000)}`
+      store.set_portrait(res.data.data)
+      set_portrait2icon()
     })
+  } else {
+    select_info.value[0].icon = ""
   }
-
 })
 
+function set_portrait2icon() {
+  select_info.value[0].icon = `http://tb.himg.baidu.com/sys/portraitn/item/${
+    store.user.portrait}?t=${Math.floor(Date.now() / 1000)}`
+}
 </script>
