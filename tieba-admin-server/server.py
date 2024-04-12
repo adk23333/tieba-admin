@@ -6,7 +6,7 @@ from asyncio import sleep
 import aiotieba
 from argon2 import PasswordHasher
 from environs import Env
-from sanic import Sanic, Request, FileNotFound
+from sanic import Sanic, Request, FileNotFound, SanicException
 from sanic.log import logger
 from sanic.response import file
 from sanic.views import HTTPMethodView
@@ -15,6 +15,7 @@ from sanic_jwt import Initialize, protected, scoped
 from tortoise.contrib.sanic import register_tortoise
 
 from core.account import bp_account
+from core.exception import ArgException
 from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse, scope_extender
 from core.log import LOGGING_CONFIG, bp_log
 from core.manager import bp_manager
@@ -122,9 +123,12 @@ class PluginsStatus(HTTPMethodView):
 app.add_route(PluginsStatus.as_view(), "/api/plugins/status")
 
 
-@app.exception([FileNotFound])
-async def file_not_found(rqt: Request, e: FileNotFound):
-    return await file("./web/index.html", status=404)
+@app.exception([FileNotFound, ArgException])
+async def exception_handle(rqt: Request, e: SanicException):
+    if isinstance(e, FileNotFound):
+        return await file("./web/index.html", status=404)
+    elif isinstance(e, ArgException):
+        return json(e.message, status_code=e.status_code)
 
 
 if app.ctx.env.bool("WEB", True):

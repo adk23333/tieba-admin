@@ -25,9 +25,9 @@ class UserPermission(HTTPMethodView):
     @scoped(Permission.super(), False)
     async def post(self, rqt: Request, user: User):
         if not rqt.form.get("user") or not rqt.form.get("forum") or not rqt.form.get("pm"):
-            return json("参数错误")
+            raise ArgException
         if rqt.form.get("pm") not in [i.value for i in Permission]:
-            return json("参数错误")
+            raise ArgException
 
         try:
             async with aiotieba.Client() as client:

@@ -83,12 +83,9 @@ async def change_password(rqt: Request, user: User):
 
     """
     if not rqt.form.get("password"):
-        return json("参数错误", status_code=400)
+        raise ArgException
 
-    try:
-        validate_password(rqt.form.get("password"))
-        user.password = rqt.app.shared_ctx.password_hasher.hash(rqt.form.get('password'))
-        await user.save()
-        return json("修改密码成功")
-    except ArgException as e:
-        return json(e.message, status_code=e.status_code)
+    validate_password(rqt.form.get("password"))
+    user.password = rqt.app.shared_ctx.password_hasher.hash(rqt.form.get('password'))
+    await user.save()
+    return json("修改密码成功")

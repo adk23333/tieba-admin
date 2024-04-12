@@ -5,6 +5,7 @@ from sanic import Blueprint, Request
 from sanic.log import LOGGING_CONFIG_DEFAULTS
 from sanic_jwt import protected, scoped
 
+from core.exception import ArgException
 from core.models import Permission, ExecuteLog
 from core.utils import json
 
@@ -58,7 +59,7 @@ async def get_log(rqt: Request):
         if pn < 1:
             pn = 1
     except (TypeError, ValueError):
-        return json("参数错误")
+        raise ArgException
     offset = (pn - 1) * limit
     logs = await ExecuteLog.all().offset(offset).limit(limit)
     return json(data={"items": [await log.to_dict() for log in logs], "total": await ExecuteLog.all().count()})
