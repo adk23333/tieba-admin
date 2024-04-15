@@ -20,7 +20,7 @@ from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse, scope_
 from core.log import LOGGING_CONFIG, bp_log
 from core.manager import bp_manager
 from core.models import Permission
-from core.utils import get_modules, json
+from core.utils import get_modules, json, sqlite_database_exits
 
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
@@ -28,8 +28,8 @@ app.ctx.env = Env()
 app.ctx.env.read_env(recurse=False)
 app.ctx.DB_URL = app.ctx.env.str("DB_URL", "sqlite://.cache/db.sqlite")
 
-if app.ctx.DB_URL.startswith("sqlite") and not os.path.exists(app.ctx.DB_URL.replace("sqlite://", "")):
-    open(app.ctx.DB_URL.replace("sqlite://", ""), 'w').close()
+if app.ctx.DB_URL.startswith("sqlite"):
+    sqlite_database_exits(app.ctx.DB_URL)
 
 models = ['core.models']
 plugins = get_modules("./plugins")

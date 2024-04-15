@@ -46,6 +46,7 @@ def get_ip(request: Request) -> str:
 def get_modules(path):
     """
     获取插件模块
+
     Args:
         path: 获取的目录
 
@@ -91,3 +92,17 @@ async def arg2user_info(client: aiotieba.Client, arg: str,
         raise ValueError("找不到对应的用户")
 
     return user
+
+
+def sqlite_database_exits(db_url: str):
+    """
+    检查sqlite数据库是否存在，如果不存在则创建
+
+    Args:
+        db_url: sqlite数据库链接
+
+    Returns:
+        None
+    """
+    if not os.path.exists(db_url.replace("sqlite://", "")):
+        open(db_url.replace("sqlite://", ""), 'w').close()
