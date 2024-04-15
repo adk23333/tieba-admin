@@ -20,7 +20,7 @@ from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse, scope_
 from core.log import LOGGING_CONFIG, bp_log
 from core.manager import bp_manager
 from core.models import Permission
-from core.utils import get_modules, json
+from core.utils import get_modules, json, sqlite_database_exits
 
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
@@ -28,8 +28,8 @@ app.ctx.env = Env()
 app.ctx.env.read_env(recurse=False)
 app.ctx.DB_URL = app.ctx.env.str("DB_URL", "sqlite://.cache/db.sqlite")
 
-if app.ctx.DB_URL.startswith("sqlite") and not os.path.exists(app.ctx.DB_URL.replace("sqlite://", "")):
-    open(app.ctx.DB_URL.replace("sqlite://", ""), 'w').close()
+if app.ctx.DB_URL.startswith("sqlite"):
+    sqlite_database_exits(app.ctx.DB_URL)
 
 models = ['core.models']
 plugins = get_modules("./plugins")
@@ -42,7 +42,21 @@ if app.ctx.env.bool("DEV", False):
     logger.setLevel(logging.DEBUG)
 aiotieba.logging.set_logger(logger)
 
-register_tortoise(app, db_url=app.ctx.DB_URL, modules={'models': models}, generate_schemas=True)
+app.ctx.DB_CONFIG = {
+    'connections': {
+        'default': app.ctx.DB_URL
+    },
+    'apps': {
+        'models': {
+            "models": models,
+            'default_connection': 'default',
+        }
+    },
+    "use_tz": False,
+    "timezone": app.ctx.env.str("TZ", "Asia/Shanghai"),
+}
+
+register_tortoise(app, config=app.ctx.DB_CONFIG, generate_schemas=True)
 Initialize(app, authenticate=authenticate,
            retrieve_user=retrieve_user,
            configuration_class=JwtConfig,
@@ -100,9 +114,8 @@ class PluginsStatus(HTTPMethodView):
         elif status == "1" and not plugin_work:
             rqt.app.m.manage(_plugin, plugins[_plugin].Plugin.start_plugin_with_process,
                              {
-                                 "db_url": rqt.app.ctx.DB_URL,
+                                 "db_config": rqt.app.ctx.DB_CONFIG,
                                  "log_level": logger.level,
-                                 "models": models,
                              })
             await sleep(1)
             plugin_work: dict = rqt.app.m.workers.get(f"Sanic-{_plugin}-0")

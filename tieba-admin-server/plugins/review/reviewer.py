@@ -266,8 +266,7 @@ class Reviewer(BasePlugin):
 
     async def on_start(self):
         logging.set_logger(logger)
-        await Tortoise.init(db_url=self.kwargs["db_url"],
-                            modules={"models": self.kwargs["models"]})
+        await Tortoise.init(config=self.kwargs["db_config"])
         await Tortoise.generate_schemas()
 
         self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
