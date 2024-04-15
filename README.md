@@ -66,4 +66,5 @@
 | WORKERS | 提供API的工作进程数量 | 1                         |
 | WEB     | 是否启用网页          | true                      |
 | DB_URL  | 数据库链接            | sqlite://.cache/db.sqlite |
+| TZ      | 时区                  | Asia/Shanghai             |
 
