@@ -27,7 +27,6 @@ class Reviewer(BasePlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.check_map: CheckMap = manager.check_map
-        self.client: Client = None
         self.FUP: ForumUserPermission = None
         self.no_exec = True
         self.check_name_map = manager.check_name_map
@@ -223,21 +222,22 @@ class Reviewer(BasePlugin):
 
         await asyncio.gather(*[check_comment_of_db(comment) for comment in comments])
 
-    async def run_with_client(self, client: Client, min_time=10.0, max_time=20.0):
+    async def run_with_client(self, user: User, min_time=35.0, max_time=60.0):
         """
         实现持续监控的关键函数
         Args:
-            client: 传入了执行账号的贴吧客户端
+            user: 传入了执行账号
             min_time: 最短间隔时间（单位：秒）
             max_time: 最大间隔时间（单位：秒）
         """
         while True:
-            logger.debug(f"[Reviewer] review {self.FUP.fname}")
-            rst = await RForum.get(fname=self.FUP.fname)
-            if rst.enable:
-                await self.check_threads(client, self.FUP.fname)
-            if self.no_exec:
-                break
+            async with Client(user.BDUSS, user.STOKEN) as client:
+                logger.debug(f"[Reviewer] review {self.FUP.fname}")
+                rst = await RForum.get(fname=self.FUP.fname)
+                if rst.enable:
+                    await self.check_threads(client, self.FUP.fname)
+                if self.no_exec:
+                    break
             await sleep(random.uniform(min_time, max_time))
 
     async def get_fup(self):
@@ -274,13 +274,11 @@ class Reviewer(BasePlugin):
 
     async def on_running(self):
         user: User = await self.FUP.user
-        self.client = await Client(user.BDUSS, user.STOKEN).__aenter__()
-        await asyncio.gather(self.run_with_client(self.client))
+        await asyncio.gather(self.run_with_client(user))
 
     async def on_stop(self):
         try:
             await connections.close_all()
-            await self.client.__aexit__()
         except ConfigurationError:
             pass
         except AttributeError:
