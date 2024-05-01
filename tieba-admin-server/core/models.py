@@ -23,13 +23,13 @@ class Permission(Enum):
     权限枚举
     
     Attributes:
-        Master : master
-        SuperAdmin : super
-        HighAdmin : high
-        MinAdmin : min
-        Creator : creator
-        Ordinary : ordinary
-        Black : black
+        Master : 管理员，大吧主
+        SuperAdmin : 大吧主权限
+        HighAdmin : 高权限吧务权限
+        MinAdmin : 小吧主权限
+        Creator : 优秀创作者权限
+        Ordinary : 普通成员权限
+        Black : 黑名单权限
     """
     Master = "master"
     SuperAdmin = "super"
@@ -39,37 +39,37 @@ class Permission(Enum):
     Ordinary = "ordinary"
     Black = "black"
 
-    @staticmethod
-    def all():
-        return [Permission.Black.value, Permission.Ordinary.value, Permission.Creator.value, Permission.MinAdmin.value,
-                Permission.HighAdmin.value, Permission.SuperAdmin.value, Permission.Master.value]
+    @classmethod
+    def all(cls):
+        return [cls.Black.value, cls.Ordinary.value, cls.Creator.value, cls.MinAdmin.value,
+                cls.HighAdmin.value, cls.SuperAdmin.value, cls.Master.value]
 
-    @staticmethod
-    def ordinary():
-        return [Permission.Ordinary.value, Permission.Creator.value, Permission.MinAdmin.value,
-                Permission.HighAdmin.value, Permission.SuperAdmin.value, Permission.Master.value]
+    @classmethod
+    def ordinary(cls):
+        return [cls.Ordinary.value, cls.Creator.value, cls.MinAdmin.value,
+                cls.HighAdmin.value, cls.SuperAdmin.value, cls.Master.value]
 
-    @staticmethod
-    def creator():
-        return [Permission.Creator.value, Permission.MinAdmin.value, Permission.HighAdmin.value,
-                Permission.SuperAdmin.value, Permission.Master.value]
+    @classmethod
+    def creator(cls):
+        return [cls.Creator.value, cls.MinAdmin.value, cls.HighAdmin.value,
+                cls.SuperAdmin.value, cls.Master.value]
 
-    @staticmethod
-    def min():
-        return [Permission.MinAdmin.value, Permission.HighAdmin.value, Permission.SuperAdmin.value,
-                Permission.Master.value]
+    @classmethod
+    def min(cls):
+        return [cls.MinAdmin.value, cls.HighAdmin.value, cls.SuperAdmin.value,
+                cls.Master.value]
 
-    @staticmethod
-    def high():
-        return [Permission.HighAdmin.value, Permission.SuperAdmin.value, Permission.Master.value]
+    @classmethod
+    def high(cls):
+        return [cls.HighAdmin.value, cls.SuperAdmin.value, cls.Master.value]
 
-    @staticmethod
-    def super():
-        return [Permission.SuperAdmin.value, Permission.Master.value]
+    @classmethod
+    def super(cls):
+        return [cls.SuperAdmin.value, cls.Master.value]
 
-    @staticmethod
-    def master():
-        return [Permission.Master.value, ]
+    @classmethod
+    def master(cls):
+        return [cls.Master.value, ]
 
 
 class Config(Model):
