@@ -15,12 +15,10 @@ export const get_self_info = () => {
 };
 
 export const register_top_admin = (data: object) => {
-  return serviceAxios({
-    url: "/auth/first_login",
-    method: "post",
-    data: data,
-  });
-};
+  return serviceAxios.postForm(
+    "/auth/first_login", data
+  )
+}
 
 export const get_portrait = () => {
   return serviceAxios.get(

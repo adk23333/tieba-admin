@@ -51,7 +51,7 @@ serviceAxios.interceptors.response.use(
           break;
         case 403:
           msg = "您没有权限操作！"
-          if (err.response.data.is_first == true) {
+          if (err.response.data.data.is_first == true) {
             store.set_title('初始化配置')
             router.push('/first_login')
             return Promise.reject(false)
