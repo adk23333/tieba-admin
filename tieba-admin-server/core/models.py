@@ -248,8 +248,8 @@ class ExecuteType(IntEnum):
 
     TiebaPermissionEdit = 100
 
-    ThreadDelete = 110
-    ThreadHide = 111
+    ThreadHide = 110
+    ThreadDelete = 111
 
     PostDelete = 120
 
