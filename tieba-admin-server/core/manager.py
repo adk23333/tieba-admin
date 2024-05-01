@@ -65,8 +65,6 @@ class UserPermission(HTTPMethodView):
             return json(data=await permission.to_dict())
         except ValueError:
             return json("没有该贴吧用户")
-        except ArgException as e:
-            return json(e.message, status_code=e.status_code)
 
 
 bp_manager.add_route(UserPermission.as_view(), "/user_pm")
