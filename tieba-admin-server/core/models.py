@@ -190,16 +190,16 @@ class ExecuteLog(Model):
     记录所有有必要公开的操作记录
 
     Attributes:
-        user : 执行操作的账号
+        user : 执行操作的主体
         type : 操作类型
         note : 备注
         date_created: 执行时间
         date_updated: 最后修改时间
     """
     id = fields.BigIntField(pk=True)
-    user = fields.ForeignKeyField("models.User")
+    user = fields.CharField(64)
     type = fields.IntField()
-    obj = fields.BigIntField()
+    obj = fields.CharField(64)
     note = fields.TextField(default="")
     date_created: datetime = fields.DatetimeField(auto_now_add=True)
     date_updated: datetime = fields.DatetimeField(auto_now=True)
@@ -210,7 +210,7 @@ class ExecuteLog(Model):
     async def to_dict(self):
         return {
             "id": self.id,
-            "user": (await self.user).username,
+            "user": self.user,
             "type": ExecuteType(self.type).name,
             "obj": self.obj,
             "note": self.note,

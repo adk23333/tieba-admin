@@ -5,10 +5,12 @@ from aiotieba import Client
 from aiotieba.typing import Comment as Tb_Comment
 from aiotieba.typing import Post as Tb_Post
 from aiotieba.typing import Thread as Tb_Thread
-from aiotieba.typing import UserInfo_pf
+from aiotieba.typing import UserInfo
 from sanic.log import logger
 
 from core.models import ExecuteLog, ExecuteType
+
+BOT_PRE = "ReviewBot"
 
 
 @dataclass
@@ -31,6 +33,7 @@ class Executor(object):
     option: ExecuteType = ExecuteType.Empty
     user_day: int = 0
     opt_day: int = 0
+    note: str = ""
 
     async def run(self):
         """
@@ -39,22 +42,23 @@ class Executor(object):
             None
 
         """
-        user: UserInfo_pf = await self.client.get_self_info()
+        user: UserInfo = await self.client.get_self_info()
         rst = True
         match self.user_opt:
             case ExecuteType.Empty:
                 pass
             case ExecuteType.Block:
                 rst = await self.client.block(self.obj.fid, self.obj.user.portrait, day=self.user_day)
-                await ExecuteLog.create(user_id=user.user_id,
+                await ExecuteLog.create(user=f"[{BOT_PRE}] {user.user_name}",
                                         type=ExecuteType.Block,
-                                        obj=self.obj.user.user_id,
-                                        note=f"{self.user_day}")
+                                        obj=self.obj.user.user_name,
+                                        note=f"[{self.note}] {self.user_day}")
             case ExecuteType.Black:
                 rst = await self.client.add_bawu_blacklist(self.obj.fname, self.obj.user.portrait)
-                await ExecuteLog.create(user_id=user.user_id,
+                await ExecuteLog.create(user=f"[{BOT_PRE}] {user.user_name}",
                                         type=ExecuteType.Black,
-                                        obj=self.obj.user.user_id)
+                                        obj=self.obj.user.user_name,
+                                        note=f"[{self.note}]")
         if not rst:
             logger.warning(rst.err)
         rst = True
@@ -63,28 +67,28 @@ class Executor(object):
                 pass
             case ExecuteType.ThreadHide:
                 rst = await self.client.hide_thread(self.obj.fid, self.obj.tid)
-                await ExecuteLog.create(user_id=user.user_id,
+                await ExecuteLog.create(user=f"[{BOT_PRE}] {user.user_name}",
                                         type=ExecuteType.Hide,
-                                        obj=self.obj.tid,
-                                        note=self.obj.text)
+                                        obj=str(self.obj.tid),
+                                        note=f"[{self.note}] {self.obj.text}")
             case ExecuteType.ThreadDelete:
                 rst = await self.client.del_thread(self.obj.fid, self.obj.tid)
-                await ExecuteLog.create(user_id=user.user_id,
+                await ExecuteLog.create(user=f"[{BOT_PRE}]{user.user_name}",
                                         type=ExecuteType.ThreadDelete,
-                                        obj=self.obj.tid,
-                                        note=self.obj.text)
+                                        obj=str(self.obj.tid),
+                                        note=f"[{self.note}] {self.obj.text}")
             case ExecuteType.PostDelete:
                 rst = await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
-                await ExecuteLog.create(user_id=user.user_id,
+                await ExecuteLog.create(user=f"[{BOT_PRE}]{user.user_name}",
                                         type=ExecuteType.PostDelete,
-                                        obj=self.obj.pid,
-                                        note=self.obj.text)
+                                        obj=str(self.obj.pid),
+                                        note=f"[{self.note}] {self.obj.text}")
             case ExecuteType.CommentDelete:
                 rst = await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
-                await ExecuteLog.create(user_id=user.user_id,
+                await ExecuteLog.create(user=f"[{BOT_PRE}]{user.user_name}",
                                         type=ExecuteType.CommentDelete,
-                                        obj=self.obj.pid,
-                                        note=self.obj.text)
+                                        obj=str(self.obj.pid),
+                                        note=f"[{self.note}] {self.obj.text}")
         if not rst:
             logger.warning(rst.err)
 
@@ -133,13 +137,14 @@ def empty():
     return Executor()
 
 
-def hide(client: Client, thread: Tb_Thread, day: int = 1):
+def hide(client: Client, thread: Tb_Thread, day: int = 1, func_name: str = ""):
     """
     返回屏蔽主题贴的操作
     Args:
         client: 传入了执行账号的贴吧客户端
         thread: 待处理主题贴
         day: 屏蔽持续时间（单位：天）
+        func_name: 调用该方法的方法的名称
 
     Returns:
         Executor
@@ -149,16 +154,21 @@ def hide(client: Client, thread: Tb_Thread, day: int = 1):
         thread,
         option=ExecuteType.ThreadHide,
         opt_day=day,
+        note=func_name,
     )
 
 
-def delete(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Literal[-1, 0, 1, 3, 10] = 0):
+def delete(client: Client,
+           obj: Union[Tb_Thread, Tb_Post, Tb_Comment],
+           day: Literal[-1, 0, 1, 3, 10] = 0,
+           func_name: str = ""):
     """
     返回删除主题贴的操作
     Args:
         client: 传入了执行账号的贴吧客户端
         obj: 待处理的主题贴/楼/楼中楼
         day: 对发送者的封禁持续时间（单位：天）-1是永封
+        func_name: 调用该方法的方法的名称
 
     Returns:
         Executor
@@ -183,22 +193,28 @@ def delete(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Lite
             option=option,
             user_opt=user_opt,
             user_day=day,
+            note=func_name,
         )
     else:
         return Executor(
             client,
             obj,
             option=option,
+            note=func_name,
         )
 
 
-def block(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Literal[1, 3, 10] = 1):
+def block(client: Client,
+          obj: Union[Tb_Thread, Tb_Post, Tb_Comment],
+          day: Literal[1, 3, 10] = 1,
+          func_name: str = ""):
     """
     返回封禁操作
     Args:
         client: 传入了执行账号的贴吧客户端
         obj: 待处理的主题贴/楼/楼中楼
         day: 封禁时间（单位：天）
+        func_name: 调用该方法的方法的名称
 
     Returns:
         Executor
@@ -207,16 +223,18 @@ def block(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], day: Liter
         client,
         obj,
         user_opt=ExecuteType.Block,
-        user_day=day
+        user_day=day,
+        note=func_name,
     )
 
 
-def black(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment]):
+def black(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], func_name: str = ""):
     """
     返回加入黑名单操作
     Args:
         client: 传入了执行账号的贴吧客户端
         obj: 待处理的主题贴/楼/楼中楼
+        func_name: 调用该方法的方法的名称
 
     Returns:
         Executor
@@ -225,4 +243,5 @@ def black(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment]):
         client,
         obj,
         user_opt=ExecuteType.Black,
+        note=func_name,
     )

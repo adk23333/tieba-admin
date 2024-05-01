@@ -165,13 +165,13 @@ async def check_keyword(t: Union[Thread, Post, Comment], client: Client):
 async def check_black(t: Union[Thread, Post, Comment], client: Client):
     user = await ForumUserPermission.filter(user_id=t.user.user_id, permission=Permission.Black.value).get_or_none()
     if user:
-        return block(client, t, 10)
+        return block(client, t, 10, func_name="check_black")
     return empty()
 
 
 def _level_wall(level: int, thread: Thread, client: Client):
     if thread.user.level == level:
-        return delete(client, thread)
+        return delete(client, thread, func_name="level_wall")
     return empty()
 
 

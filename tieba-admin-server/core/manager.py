@@ -4,7 +4,7 @@ from sanic.views import HTTPMethodView
 from sanic_jwt import protected, scoped, inject_user
 
 from .exception import ArgException
-from .models import ForumUserPermission, Permission, User
+from .models import ForumUserPermission, Permission, User, ExecuteLog, ExecuteType
 from .utils import json, arg2user_info, validate_password
 
 bp_manager = Blueprint("manager", url_prefix="/api/manager")
@@ -37,6 +37,10 @@ class UserPermission(HTTPMethodView):
             if rqt.form.get("del", "0") == "1":
                 await ForumUserPermission.filter(user_id=user_info.user_id, fid=forum_id).delete()
                 await User.filter(uid=user_info.user_id).delete()
+                await ExecuteLog.create(user=user.username,
+                                        type=ExecuteType.PermissionEdit,
+                                        obj=user_info.user_name,
+                                        note=f"删除用户[{user_info.user_name}]")
                 return json(f"已删除{user_info.user_name}")
 
             permission = await ForumUserPermission.filter(user_id=user_info.user_id, fid=forum_id).get_or_none()
@@ -45,6 +49,9 @@ class UserPermission(HTTPMethodView):
                                                        fid=forum_id,
                                                        permission=rqt.form.get("pm"),
                                                        fname=rqt.form.get("forum"))
+                if permission.permission == Permission.Master.value or rqt.form.get("pm") == Permission.Master.value:
+                    return json("您没有相关权限")
+
                 if rqt.form.get("password"):
                     validate_password(rqt.form.get('password'))
                     hash_password = rqt.app.shared_ctx.password_hasher.hash(rqt.form.get("password"))
@@ -55,12 +62,17 @@ class UserPermission(HTTPMethodView):
                                   username=user_info.user_name,
                                   password=hash_password,
                                   master=user.uid)
-
-            if permission.permission == Permission.Master.value or rqt.form.get("pm") == Permission.Master.value:
-                return json("您没有相关权限")
+            else:
+                if permission.permission == Permission.Master.value or rqt.form.get("pm") == Permission.Master.value:
+                    return json("您没有相关权限")
 
             permission.permission = rqt.form.get("pm")
             await permission.save()
+
+            await ExecuteLog.create(user=user.username,
+                                    type=ExecuteType.PermissionEdit,
+                                    obj=user_info.user_name,
+                                    note=f"设置[{user_info.user_name}]为 {permission.permission}")
 
             return json(data=await permission.to_dict())
         except ValueError:
