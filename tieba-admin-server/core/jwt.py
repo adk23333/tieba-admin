@@ -1,10 +1,10 @@
 import base64
 
-import environs
 from sanic import Request
 from sanic_jwt import Configuration, Responses, exceptions
 from sanic_jwt.exceptions import AuthenticationFailed
 
+import env
 from .models import User, ForumUserPermission
 from .utils import json
 
@@ -46,7 +46,7 @@ class JwtConfig(Configuration):
     url_prefix = "/api/auth"
     path_to_retrieve_user = "/self"
     expiration_delta = 60 * 60
-    secret = environs.Env().str("SECRET", "This is a big secret!!!")
+    secret = env.SECRET
     # cookie_set = True
     # cookie_access_token_name = "token"
     user_id = "uid"

@@ -5,7 +5,6 @@ from asyncio import sleep
 
 import aiotieba
 from argon2 import PasswordHasher
-from environs import Env
 from sanic import Sanic, Request, FileNotFound, SanicException
 from sanic.log import logger
 from sanic.response import file
@@ -14,23 +13,20 @@ from sanic_ext import Extend
 from sanic_jwt import Initialize, protected, scoped
 from tortoise.contrib.sanic import register_tortoise
 
+from core import env
 from core.account import bp_account
 from core.exception import ArgException, FirstLoginError
 from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse, scope_extender
 from core.log import LOGGING_CONFIG, bp_log
 from core.manager import bp_manager
-from core.models import Permission, CACHE_PATH, CACHE_FILE, Config
+from core.models import Permission, Config
 from core.utils import get_modules, json, sqlite_database_exits
 
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
 
-app.ctx.env = Env()
-app.ctx.env.read_env(recurse=False)
-app.ctx.DB_URL = app.ctx.env.str("DB_URL", f"sqlite://{CACHE_PATH}/{CACHE_FILE}")
-
-if app.ctx.DB_URL.startswith("sqlite"):
-    sqlite_database_exits(app.ctx.DB_URL)
+if env.DB_URL.startswith("sqlite"):
+    sqlite_database_exits(env.DB_URL)
 
 models = ['core.models']
 plugins = get_modules("./plugins")
@@ -39,13 +35,13 @@ for plugin in plugins.values():
     if plugin.Plugin.PLUGIN_MODEL:
         models.append(plugin.Plugin.PLUGIN_MODEL)
 
-if app.ctx.env.bool("DEV", False):
+if env.DEV:
     logger.setLevel(logging.DEBUG)
 aiotieba.logging.set_logger(logger)
 
 app.ctx.DB_CONFIG = {
     'connections': {
-        'default': app.ctx.DB_URL
+        'default': env.DB_URL
     },
     'apps': {
         'models': {
@@ -54,7 +50,7 @@ app.ctx.DB_CONFIG = {
         }
     },
     "use_tz": False,
-    "timezone": app.ctx.env.str("TZ", "Asia/Shanghai"),
+    "timezone": env.TZ,
 }
 
 register_tortoise(app, config=app.ctx.DB_CONFIG, generate_schemas=True)
@@ -161,13 +157,13 @@ async def exception_handle(rqt: Request, e: SanicException):
         return json(e.message, {"is_first": is_first}, 403)
 
 
-if app.ctx.env.bool("WEB", True):
+if env.WEB:
     app.static("/", "./web/", index="index.html")
 
 if __name__ == "__main__":
     app.run(
-        host=app.ctx.env.str("HOST", "0.0.0.0"),
-        port=app.ctx.env.int("PORT", 3100),
-        dev=app.ctx.env.bool("DEV", False),
-        workers=app.ctx.env.int("WORKERS", 1),
+        host=env.HOST,
+        port=env.PORT,
+        dev=env.DEV,
+        workers=env.WORKERS,
     )
