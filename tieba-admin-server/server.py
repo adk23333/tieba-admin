@@ -147,7 +147,7 @@ class PluginsStatus(HTTPMethodView):
 app.add_route(PluginsStatus.as_view(), "/api/plugins/status")
 
 
-@app.exception([FileNotFound, ArgException])
+@app.exception(FileNotFound, ArgException, FirstLoginError)
 async def exception_handle(rqt: Request, e: SanicException):
     if isinstance(e, FileNotFound):
         return await file("./web/index.html", status=404)
