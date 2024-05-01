@@ -40,9 +40,13 @@ export const useAppStore = defineStore('app', {
     },
     exit() {
       this.user = new User()
+      this.is_login = false
     },
     set_portrait(portrait: string) {
       this.user.portrait = portrait
+    },
+    login_timeout() {
+      this.exit()
     }
   },
   persist: {

@@ -31,6 +31,7 @@ get_self_full().then((res) => {
   store.set_user(res.data.data)
 }).catch((err) => {
   if (err) {
+    store.login_timeout()
     router.push('/login')
   }
 })
