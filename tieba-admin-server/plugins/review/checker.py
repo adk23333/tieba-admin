@@ -157,7 +157,7 @@ async def check_keyword(t: Union[Thread, Post, Comment], client: Client):
         keywords = await Keyword.all()
         for kw in keywords:
             if t.text.find(kw.keyword) != -1:
-                return delete(client, t)
+                return delete(client, t, func_name="check_keyword")
     return empty()
 
 
