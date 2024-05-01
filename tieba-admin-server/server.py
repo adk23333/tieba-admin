@@ -71,6 +71,9 @@ app.blueprint(bp_account)
 
 @app.before_server_start
 async def init_server(_app: Sanic):
+    if (await Config.get_bool(key="first")) is None:
+        await Config.set_config(key="first", v1=True)
+
     for _plugin in plugins.values():
         await _plugin.Plugin.init_plugin()
     _app.shared_ctx.password_hasher = PasswordHasher()
@@ -150,6 +153,11 @@ async def exception_handle(rqt: Request, e: SanicException):
         return await file("./web/index.html", status=404)
     elif isinstance(e, ArgException):
         return json(e.message, status_code=e.status_code)
+    elif isinstance(e, FirstLoginError):
+        is_first = await Config.get_bool(key="first")
+        if is_first is None:
+            is_first = True
+        return json(e.message, {"is_first": is_first}, 403)
 
 
 if app.ctx.env.bool("WEB", True):
