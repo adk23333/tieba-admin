@@ -62,7 +62,7 @@ class Reviewer(BasePlugin):
             if not self.no_exec:
                 await executor.run()
             else:
-                logger.debug(f"[review] {executor}")
+                logger.debug(f"[review] [Thread] {executor}")
 
         async def check_last_time(clt_thread: Thread):
             if clt_thread.is_livepost:
@@ -152,7 +152,7 @@ class Reviewer(BasePlugin):
             if not self.no_exec:
                 await executor.run()
             else:
-                logger.debug(f"[review] {executor}")
+                logger.debug(f"[review] [Post] {executor}")
 
         async def check_reply_num(crn_post: Post):
             prev_post = await RPost.filter(pid=crn_post.pid).get_or_none()
@@ -212,7 +212,7 @@ class Reviewer(BasePlugin):
             if not self.no_exec:
                 await executor.run()
             else:
-                logger.debug(f"[review] {executor}")
+                logger.debug(f"[review] [Comment] {executor}")
 
         async def check_comment_of_db(ccod_comment: Comment):
             prev_comment = await RPost.filter(pid=ccod_comment.pid).get_or_none()
