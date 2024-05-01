@@ -75,6 +75,13 @@ async def init_server(_app: Sanic):
     _app.shared_ctx.password_hasher = PasswordHasher()
 
 
+@app.on_request
+async def first_login_check(rqt: Request):
+    is_first = await Config.get_bool(key="first")
+    if is_first and rqt.path != '/api/auth/first_login' and rqt.path.startswith("/api"):
+        raise FirstLoginError("第一次登录")
+
+
 @app.get("/api/plugins")
 @protected()
 @scoped(Permission.min(), False)
