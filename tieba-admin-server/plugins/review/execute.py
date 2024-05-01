@@ -33,7 +33,7 @@ class Executor(object):
     option: ExecuteType = ExecuteType.Empty
     user_day: int = 0
     opt_day: int = 0
-    note: str = ""
+    note: set[str] = ()
 
     async def run(self):
         """
@@ -42,6 +42,12 @@ class Executor(object):
             None
 
         """
+
+        note = ""
+        for i in self.note:
+            note += f",{i}"
+        note = note[1:]
+
         user: UserInfo = await self.client.get_self_info()
         rst = True
         match self.user_opt:
@@ -52,13 +58,13 @@ class Executor(object):
                 await ExecuteLog.create(user=f"[{BOT_PRE}] {user.user_name}",
                                         type=ExecuteType.Block,
                                         obj=self.obj.user.user_name,
-                                        note=f"[{self.note}] {self.user_day}")
+                                        note=f"[{note}] {self.user_day}")
             case ExecuteType.Black:
                 rst = await self.client.add_bawu_blacklist(self.obj.fname, self.obj.user.portrait)
                 await ExecuteLog.create(user=f"[{BOT_PRE}] {user.user_name}",
                                         type=ExecuteType.Black,
                                         obj=self.obj.user.user_name,
-                                        note=f"[{self.note}]")
+                                        note=f"[{note}]")
         if not rst:
             logger.warning(rst.err)
         rst = True
@@ -70,25 +76,28 @@ class Executor(object):
                 await ExecuteLog.create(user=f"[{BOT_PRE}] {user.user_name}",
                                         type=ExecuteType.Hide,
                                         obj=str(self.obj.tid),
-                                        note=f"[{self.note}] {self.obj.text}")
+                                        note=f"[{note}] {self.obj.text}")
+
             case ExecuteType.ThreadDelete:
                 rst = await self.client.del_thread(self.obj.fid, self.obj.tid)
                 await ExecuteLog.create(user=f"[{BOT_PRE}]{user.user_name}",
                                         type=ExecuteType.ThreadDelete,
                                         obj=str(self.obj.tid),
-                                        note=f"[{self.note}] {self.obj.text}")
+                                        note=f"[{note}] {self.obj.text}")
+
             case ExecuteType.PostDelete:
                 rst = await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
                 await ExecuteLog.create(user=f"[{BOT_PRE}]{user.user_name}",
                                         type=ExecuteType.PostDelete,
                                         obj=str(self.obj.pid),
-                                        note=f"[{self.note}] {self.obj.text}")
+                                        note=f"[{note}] {self.obj.text}")
+
             case ExecuteType.CommentDelete:
                 rst = await self.client.del_post(self.obj.fid, self.obj.tid, self.obj.pid)
                 await ExecuteLog.create(user=f"[{BOT_PRE}]{user.user_name}",
                                         type=ExecuteType.CommentDelete,
                                         obj=str(self.obj.pid),
-                                        note=f"[{self.note}] {self.obj.text}")
+                                        note=f"[{note}] {self.obj.text}")
         if not rst:
             logger.warning(rst.err)
 
@@ -102,17 +111,24 @@ class Executor(object):
             Executor
 
         """
+        self.note = set(self.note)
 
         if exec2.user_opt > self.user_opt:
             self.user_opt = exec2.user_opt
             self.user_day = exec2.user_day
+            self.note.update(exec2.note)
+
         elif exec2.user_opt == self.user_opt and exec2.user_day > self.user_day:
             self.user_day = exec2.user_day
+            self.note.update(exec2.note)
 
         if exec2.option > self.option:
             self.option = exec2.option
+            self.note.update(exec2.note)
+
         elif exec2.option == self.option and exec2.opt_day > self.opt_day:
             self.opt_day = exec2.opt_day
+            self.note.update(exec2.note)
 
     def __str__(self):
         return str(self.__dict__)
@@ -154,7 +170,7 @@ def hide(client: Client, thread: Tb_Thread, day: int = 1, func_name: str = ""):
         thread,
         option=ExecuteType.ThreadHide,
         opt_day=day,
-        note=func_name,
+        note={func_name},
     )
 
 
@@ -193,14 +209,14 @@ def delete(client: Client,
             option=option,
             user_opt=user_opt,
             user_day=day,
-            note=func_name,
+            note={func_name},
         )
     else:
         return Executor(
             client,
             obj,
             option=option,
-            note=func_name,
+            note={func_name},
         )
 
 
@@ -224,7 +240,7 @@ def block(client: Client,
         obj,
         user_opt=ExecuteType.Block,
         user_day=day,
-        note=func_name,
+        note={func_name},
     )
 
 
@@ -243,5 +259,5 @@ def black(client: Client, obj: Union[Tb_Thread, Tb_Post, Tb_Comment], func_name:
         client,
         obj,
         user_opt=ExecuteType.Black,
-        note=func_name,
+        note={func_name},
     )
