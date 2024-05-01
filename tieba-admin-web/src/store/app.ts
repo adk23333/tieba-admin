@@ -1,24 +1,22 @@
 // Utilities
 import {defineStore} from 'pinia'
 
-interface User {
-  uid: number
-  tuid: number
-  username: string
-  permission: string
+export class User {
+  uid: number = 0
+  tuid: number = 0
+  username: string = ''
+  permission: string = ''
+  fid: number = 0
+  fname: string = ''
+  token: string = ''
+  portrait: string = ''
 }
 
 export const useAppStore = defineStore('app', {
   state: () => ({
     title: '概览',
     is_login: false,
-    user: {
-      token: '',
-      uid: 0,
-      tuid: 0,
-      username: '',
-      portrait: '',
-    }
+    user: new User()
   }),
   actions: {
     set_title(title: string) {
@@ -36,14 +34,12 @@ export const useAppStore = defineStore('app', {
       this.user.uid = object.uid
       this.user.tuid = object.tuid
       this.user.username = object.username
+      this.user.permission = object.permission
+      this.user.fid = object.fid
+      this.user.fname = object.fname
     },
     exit() {
-      this.user.token = ""
-      this.user.uid = 0
-      this.user.tuid = 0
-      this.user.username = ""
-      this.is_login = false
-      this.user.portrait = ""
+      this.user = new User()
     },
     set_portrait(portrait: string) {
       this.user.portrait = portrait
