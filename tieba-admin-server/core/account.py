@@ -89,3 +89,15 @@ async def change_password(rqt: Request, user: User):
     user.password = rqt.app.shared_ctx.password_hasher.hash(rqt.form.get('password'))
     await user.save()
     return json("修改密码成功")
+
+
+@bp_account.get("/self_full")
+@inject_user()
+@protected()
+@scoped(Permission.ordinary(), False)
+async def get_self_full(rqt: Request, user: User):
+    """获取完整个人信息
+
+    """
+    fup = await ForumUserPermission.get(user_id=user.uid)
+    return json(data=await fup.to_dict())
