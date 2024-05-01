@@ -15,18 +15,19 @@ from sanic_jwt import Initialize, protected, scoped
 from tortoise.contrib.sanic import register_tortoise
 
 from core.account import bp_account
-from core.exception import ArgException
+from core.exception import ArgException, FirstLoginError
 from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse, scope_extender
 from core.log import LOGGING_CONFIG, bp_log
 from core.manager import bp_manager
-from core.models import Permission
+from core.models import Permission, CACHE_PATH, CACHE_FILE, Config
 from core.utils import get_modules, json, sqlite_database_exits
 
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
+
 app.ctx.env = Env()
 app.ctx.env.read_env(recurse=False)
-app.ctx.DB_URL = app.ctx.env.str("DB_URL", "sqlite://.cache/db.sqlite")
+app.ctx.DB_URL = app.ctx.env.str("DB_URL", f"sqlite://{CACHE_PATH}/{CACHE_FILE}")
 
 if app.ctx.DB_URL.startswith("sqlite"):
     sqlite_database_exits(app.ctx.DB_URL)
