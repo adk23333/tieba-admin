@@ -43,14 +43,14 @@ class Level(Enum):
         return self.value.add(other)
 
 
-OFFICES_ID = {"贴吧吧主小管家": 167570067, }
+OFFICES_ID = {167570067: "贴吧吧主小管家", }
 
 
 def ignore_office():
     def wrapper(func: CheckFunc):
         @wraps(func)
         async def decorator(t: Union[Thread, Post, Comment], c):
-            if t.user.user_id in OFFICES_ID.values():
+            if t.user.user_id in OFFICES_ID:
                 return empty()
             return await func(t, c)
 
