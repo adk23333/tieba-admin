@@ -4,7 +4,7 @@ from sanic import Request
 from sanic_jwt import Configuration, Responses, exceptions
 from sanic_jwt.exceptions import AuthenticationFailed
 
-import env
+from . import env
 from .models import User, ForumUserPermission
 from .utils import json
 
