@@ -58,15 +58,16 @@ app.ctx.DB_CONFIG = {
 }
 
 register_tortoise(app, config=app.ctx.DB_CONFIG, generate_schemas=True)
+
+app.blueprint(bp_manager)
+app.blueprint(bp_log)
+app.blueprint(bp_account)
+
 Initialize(app, authenticate=authenticate,
            retrieve_user=retrieve_user,
            configuration_class=JwtConfig,
            responses_class=JwtResponse,
            add_scopes_to_payload=scope_extender)
-
-app.blueprint(bp_manager)
-app.blueprint(bp_log)
-app.blueprint(bp_account)
 
 
 @app.before_server_start
