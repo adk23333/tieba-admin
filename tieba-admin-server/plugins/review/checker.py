@@ -1,4 +1,5 @@
 from enum import Enum
+from functools import wraps
 from typing import Union, Callable, Coroutine, Dict, Any, Literal, List
 
 from aiotieba import Client
@@ -40,6 +41,22 @@ class Level(Enum):
         使这个类支持使用+符号合并
         """
         return self.value.add(other)
+
+
+OFFICES_ID = {167570067: "贴吧吧主小管家", }
+
+
+def ignore_office():
+    def wrapper(func: CheckFunc):
+        @wraps(func)
+        async def decorator(t: Union[Thread, Post, Comment], c):
+            if t.user.user_id in OFFICES_ID:
+                return empty()
+            return await func(t, c)
+
+        return decorator
+
+    return wrapper
 
 
 class CheckerManager:
@@ -134,12 +151,13 @@ manager = CheckerManager()
 
 
 @manager.route(['thread', 'post', 'comment'])
+@ignore_office()
 async def check_keyword(t: Union[Thread, Post, Comment], client: Client):
     if t.user.level in Level.LOW.value:
         keywords = await Keyword.all()
         for kw in keywords:
             if t.text.find(kw.keyword) != -1:
-                return delete(client, t)
+                return delete(client, t, func_name="check_keyword")
     return empty()
 
 
@@ -147,21 +165,23 @@ async def check_keyword(t: Union[Thread, Post, Comment], client: Client):
 async def check_black(t: Union[Thread, Post, Comment], client: Client):
     user = await ForumUserPermission.filter(user_id=t.user.user_id, permission=Permission.Black.value).get_or_none()
     if user:
-        return block(client, t, 10)
+        return block(client, t, 10, func_name="check_black")
     return empty()
 
 
 def _level_wall(level: int, thread: Thread, client: Client):
     if thread.user.level == level:
-        return delete(client, thread)
+        return delete(client, thread, func_name="level_wall")
     return empty()
 
 
 @manager.thread()
+@ignore_office()
 async def level_wall_1(thread: Thread, client: Client):
     return _level_wall(1, thread, client)
 
 
 @manager.thread()
+@ignore_office()
 async def level_wall_3(thread: Thread, client: Client):
     return _level_wall(3, thread, client)

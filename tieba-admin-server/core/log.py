@@ -9,13 +9,13 @@ from core.exception import ArgException
 from core.models import Permission, ExecuteLog
 from core.utils import json
 
-if not os.path.exists('./log'):
-    os.makedirs('./log')
+LOG_PATH = "./log"
+LOGFILE = "server.log"
 
-if not os.path.exists('./.cache'):
-    os.makedirs('./.cache')
+if not os.path.exists(LOG_PATH):
+    os.makedirs(LOG_PATH)
 
-LOG_FILE_PATH = "./log/server.log"
+LOG_FILE_PATH = f"{LOG_PATH}/{LOGFILE}"
 LOGGING_CONFIG = LOGGING_CONFIG_DEFAULTS
 LOGGING_CONFIG.update({
     "handlers": {

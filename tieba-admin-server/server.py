@@ -5,7 +5,6 @@ from asyncio import sleep
 
 import aiotieba
 from argon2 import PasswordHasher
-from environs import Env
 from sanic import Sanic, Request, FileNotFound, SanicException
 from sanic.log import logger
 from sanic.response import file
@@ -14,22 +13,20 @@ from sanic_ext import Extend
 from sanic_jwt import Initialize, protected, scoped
 from tortoise.contrib.sanic import register_tortoise
 
+from core import env
 from core.account import bp_account
-from core.exception import ArgException
+from core.exception import ArgException, FirstLoginError
 from core.jwt import authenticate, retrieve_user, JwtConfig, JwtResponse, scope_extender
 from core.log import LOGGING_CONFIG, bp_log
 from core.manager import bp_manager
-from core.models import Permission
+from core.models import Permission, Config
 from core.utils import get_modules, json, sqlite_database_exits
 
 app = Sanic("tieba-admin-server", log_config=LOGGING_CONFIG)
 Extend(app)
-app.ctx.env = Env()
-app.ctx.env.read_env(recurse=False)
-app.ctx.DB_URL = app.ctx.env.str("DB_URL", "sqlite://.cache/db.sqlite")
 
-if app.ctx.DB_URL.startswith("sqlite"):
-    sqlite_database_exits(app.ctx.DB_URL)
+if env.DB_URL.startswith("sqlite"):
+    sqlite_database_exits(env.DB_URL)
 
 models = ['core.models']
 plugins = get_modules("./plugins")
@@ -38,13 +35,13 @@ for plugin in plugins.values():
     if plugin.Plugin.PLUGIN_MODEL:
         models.append(plugin.Plugin.PLUGIN_MODEL)
 
-if app.ctx.env.bool("DEV", False):
+if env.DEV:
     logger.setLevel(logging.DEBUG)
 aiotieba.logging.set_logger(logger)
 
 app.ctx.DB_CONFIG = {
     'connections': {
-        'default': app.ctx.DB_URL
+        'default': env.DB_URL
     },
     'apps': {
         'models': {
@@ -53,26 +50,37 @@ app.ctx.DB_CONFIG = {
         }
     },
     "use_tz": False,
-    "timezone": app.ctx.env.str("TZ", "Asia/Shanghai"),
+    "timezone": env.TZ,
 }
 
 register_tortoise(app, config=app.ctx.DB_CONFIG, generate_schemas=True)
+
+app.blueprint(bp_manager)
+app.blueprint(bp_log)
+app.blueprint(bp_account)
+
 Initialize(app, authenticate=authenticate,
            retrieve_user=retrieve_user,
            configuration_class=JwtConfig,
            responses_class=JwtResponse,
            add_scopes_to_payload=scope_extender)
 
-app.blueprint(bp_manager)
-app.blueprint(bp_log)
-app.blueprint(bp_account)
-
 
 @app.before_server_start
 async def init_server(_app: Sanic):
+    if (await Config.get_bool(key="first")) is None:
+        await Config.set_config(key="first", v1=True)
+
     for _plugin in plugins.values():
         await _plugin.Plugin.init_plugin()
     _app.shared_ctx.password_hasher = PasswordHasher()
+
+
+@app.on_request
+async def first_login_check(rqt: Request):
+    is_first = await Config.get_bool(key="first")
+    if is_first and rqt.path != '/api/auth/first_login' and rqt.path.startswith("/api"):
+        raise FirstLoginError("第一次登录")
 
 
 @app.get("/api/plugins")
@@ -136,21 +144,26 @@ class PluginsStatus(HTTPMethodView):
 app.add_route(PluginsStatus.as_view(), "/api/plugins/status")
 
 
-@app.exception([FileNotFound, ArgException])
+@app.exception(FileNotFound, ArgException, FirstLoginError)
 async def exception_handle(rqt: Request, e: SanicException):
     if isinstance(e, FileNotFound):
         return await file("./web/index.html", status=404)
     elif isinstance(e, ArgException):
         return json(e.message, status_code=e.status_code)
+    elif isinstance(e, FirstLoginError):
+        is_first = await Config.get_bool(key="first")
+        if is_first is None:
+            is_first = True
+        return json(e.message, {"is_first": is_first}, 403)
 
 
-if app.ctx.env.bool("WEB", True):
+if env.WEB:
     app.static("/", "./web/", index="index.html")
 
 if __name__ == "__main__":
     app.run(
-        host=app.ctx.env.str("HOST", "0.0.0.0"),
-        port=app.ctx.env.int("PORT", 3100),
-        dev=app.ctx.env.bool("DEV", False),
-        workers=app.ctx.env.int("WORKERS", 1),
+        host=env.HOST,
+        port=env.PORT,
+        dev=env.DEV,
+        workers=env.WORKERS,
     )

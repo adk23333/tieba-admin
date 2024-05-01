@@ -7,3 +7,16 @@ export const rules = {
   passwordMatchNullable: (v: any) => v == "" || rules.passwordMatch(v),
   minNullable: (v: any) => v.length == 0 || rules.min(v),
 }
+
+export const Permission: {
+  [key: string]: string
+} = {
+  super: "大吧主",
+  high: "高权限小吧主",
+  min: "小吧主",
+  creator: "优秀创作者",
+  ordinary: "普通成员",
+  black: "黑名单",
+}
+
+export const FullPermission: { [key: string]: string } = {master: "管理员", ...Permission}

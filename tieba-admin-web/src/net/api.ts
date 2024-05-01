@@ -1,26 +1,22 @@
 import serviceAxios from "./index";
 
 export const login = () => {
-  return serviceAxios({
-    url: "/auth",
-    method: "post",
-  });
-};
+  return serviceAxios.post("/auth")
+}
 
 export const get_self_info = () => {
-  return serviceAxios({
-    url: "/auth/self",
-    method: "get",
-  });
-};
+  return serviceAxios.get("/auth/self")
+}
+
+export const get_self_full = () => {
+  return serviceAxios.get("/auth/self_full")
+}
 
 export const register_top_admin = (data: object) => {
-  return serviceAxios({
-    url: "/auth/first_login",
-    method: "post",
-    data: data,
-  });
-};
+  return serviceAxios.postForm(
+    "/auth/first_login", data
+  )
+}
 
 export const get_portrait = () => {
   return serviceAxios.get(

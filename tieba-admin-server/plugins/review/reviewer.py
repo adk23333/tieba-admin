@@ -62,7 +62,7 @@ class Reviewer(BasePlugin):
             if not self.no_exec:
                 await executor.run()
             else:
-                logger.debug(f"[review] {executor}")
+                logger.debug(f"[review] [Thread] {executor}")
 
         async def check_last_time(clt_thread: Thread):
             if clt_thread.is_livepost:
@@ -152,7 +152,7 @@ class Reviewer(BasePlugin):
             if not self.no_exec:
                 await executor.run()
             else:
-                logger.debug(f"[review] {executor}")
+                logger.debug(f"[review] [Post] {executor}")
 
         async def check_reply_num(crn_post: Post):
             prev_post = await RPost.filter(pid=crn_post.pid).get_or_none()
@@ -212,7 +212,7 @@ class Reviewer(BasePlugin):
             if not self.no_exec:
                 await executor.run()
             else:
-                logger.debug(f"[review] {executor}")
+                logger.debug(f"[review] [Comment] {executor}")
 
         async def check_comment_of_db(ccod_comment: Comment):
             prev_comment = await RPost.filter(pid=ccod_comment.pid).get_or_none()
@@ -240,12 +240,14 @@ class Reviewer(BasePlugin):
                     break
             await sleep(random.uniform(min_time, max_time))
 
-    async def get_fup(self):
-        self.FUP = await ForumUserPermission.filter(permission=Permission.Master.value).get_or_none()
-        if self.FUP:
-            rf = await RForum.filter(fname=self.FUP.fname).get_or_none()
+    @classmethod
+    async def get_fup(cls):
+        fup = await ForumUserPermission.filter(permission=Permission.Master.value).get_or_none()
+        if fup:
+            rf = await RForum.filter(fname=fup.fname).get_or_none()
             if not rf:
-                await RForum.create(fname=self.FUP.fname)
+                await RForum.create(fname=fup.fname)
+        return fup
 
     @classmethod
     async def init_plugin(cls):
@@ -254,6 +256,8 @@ class Reviewer(BasePlugin):
         no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
         if no_exec is None:
             await Config.set_config(key="REVIEW_NO_EXEC", v1=True)
+
+        await cls.get_fup()
 
         await RFunction.filter(function__not_in=manager.check_name_map).delete()
         old_name_map: List[str] = [i.function for i in (await RFunction.all())]
@@ -270,7 +274,7 @@ class Reviewer(BasePlugin):
         await Tortoise.generate_schemas()
 
         self.no_exec = await Config.get_bool(key="REVIEW_NO_EXEC")
-        await self.get_fup()
+        self.FUP = await self.get_fup()
 
     async def on_running(self):
         user: User = await self.FUP.user

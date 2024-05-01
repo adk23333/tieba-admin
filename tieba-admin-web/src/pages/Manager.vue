@@ -12,7 +12,7 @@
               variant="outlined"
               :rules="[rules.required]"
               v-model="new_user.user"
-              label="ID/username/portrait">
+              label="#UID#/username/portrait">
             </v-text-field>
             <v-text-field
               class="min-width"
@@ -35,7 +35,7 @@
               label="权限"
               density="compact"
               v-model="new_user.pm"
-              :items="['super', 'high', 'min', 'creator', 'ordinary', 'black']"
+              :items="permission"
               variant="outlined"
             ></v-select>
 
@@ -66,7 +66,7 @@ import {useAppStore} from "@/store/app";
 import {ref} from "vue"
 import {get_users, set_users} from "@/net/api";
 import {message} from "@/plugins/toast";
-import {rules} from "@/components/utils";
+import {Permission, rules} from "@/components/utils";
 
 const store = useAppStore()
 store.set_title('人员管理')
@@ -82,7 +82,7 @@ interface User {
 
 const itemsPerPage = ref(5)
 const headers = ref([
-  {title: 'ID', key: 'tuid', sortable: false,},
+  {title: 'UID', key: 'tuid', sortable: false,},
   {title: 'username', key: 'username', sortable: false,},
   {title: '所属吧', key: 'fname', sortable: false,},
   {title: '权限', key: 'permission', sortable: false,},
@@ -96,6 +96,7 @@ const new_user = ref({
   pm: "",
   password: ""
 })
+const permission = Object.keys(Permission)
 
 // @ts-ignore
 function loadItems({page, itemsPerPage, sortBy}) {
